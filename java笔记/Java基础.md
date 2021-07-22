@@ -2000,7 +2000,7 @@ SimpleDateFormat日期格式化（常用）
 
 ## java集合collection
 
-![collection](java笔记\Java基础.assets\collection.png)
+![collection](javaStart/java笔记/Java基础.assets/collection.png)
 
 ### 集合的基本操作
 
