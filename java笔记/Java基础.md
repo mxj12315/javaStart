@@ -1998,9 +1998,9 @@ SimpleDateFormat日期格式化（常用）
 
 
 
-## java集合collection
+## `java`集合`collection`
 
-![collection](F:\java学习\java笔记\Java基础.assets\collection.png)
+![collection](.\Java基础.assets\collection.png)
 
 ### 集合的基本操作
 
@@ -2394,3 +2394,4 @@ class Goat1 {
 元素可以重复
 
 元素有序，按照添加顺序，默认第一个索引为0
+
