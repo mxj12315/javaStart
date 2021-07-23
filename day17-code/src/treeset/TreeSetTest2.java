@@ -10,6 +10,7 @@ public class TreeSetTest2 {
     public static void main(String[] args) {
         Goat1 goat1 = new Goat1("黑色",45.3);
         Goat1 goat2 = new Goat1("白色",35.8);
+        // 使用匿名内部类的写法
 //        Set<Goat1> set =new TreeSet<>(new Comparator<Goat1>() {
 //
 //            /**
