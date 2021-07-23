@@ -98,5 +98,14 @@ public class ListTest {
         boolean contains = list.contains("孙悟空");
         System.out.println(contains);
 
+
+    }
+
+
+    public void test(){
+        getName();
+    }
+    public String getName(){
+        return "";
     }
 }
