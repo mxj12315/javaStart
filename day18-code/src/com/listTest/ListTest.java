@@ -94,5 +94,9 @@ public class ListTest {
         // 遍历集合6 :通过forEach方法,lambda表达式方法引用
         list.forEach(System.out::println);
 
+        // 判断是否包含某个对象
+        boolean contains = list.contains("孙悟空");
+        System.out.println(contains);
+
     }
 }
