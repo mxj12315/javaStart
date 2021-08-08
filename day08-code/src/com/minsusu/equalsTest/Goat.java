@@ -14,6 +14,11 @@ public class Goat {
         this.weight = weight;
     }
 
+    /**
+     * 重写equals方法
+     * @param o  要比较的对象
+     * @return
+     */
     @Override
     public boolean equals(Object o) {
         // 比较内存地址，如果是同一个内存地址，返回true

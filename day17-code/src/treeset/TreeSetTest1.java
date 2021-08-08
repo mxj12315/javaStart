@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * TreeSet自定义元素
+ * TreeSet自然排序
  */
 public class TreeSetTest1 {
     public static void main(String[] args) {

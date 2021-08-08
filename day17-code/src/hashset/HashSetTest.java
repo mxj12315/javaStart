@@ -65,7 +65,7 @@ class Dog{
         if (this==obj) return true;
         // 如果obj不为空且obj类型和Dog的类型相同证明是同一个对象
         if (obj!=null  && obj.getClass()==Dog.class){
-            return this.color.equals(((Dog) obj).color)  && this.weight - ((Dog) obj).weight < 1e-2;
+            return this.color.equals(((Dog) obj).color)  && this.weight - ((Dog) obj).weight < 1e-2/*两个浮点数差小于10的-2次方*/;
         }
         return false;
     };

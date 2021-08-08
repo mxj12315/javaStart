@@ -102,10 +102,4 @@ public class ListTest {
     }
 
 
-    public void test(){
-        getName();
-    }
-    public String getName(){
-        return "";
-    }
 }

@@ -1745,6 +1745,75 @@ public class toStringOverride {
 ### equals()方法
 因为`==`是判断内存地址是否相等，equals是根据业务需要来指定两个对象相等
 
+```java
+package com.minsusu.equalsTest;
+
+import java.util.Objects;
+
+/**
+ * 山羊类
+ */
+public class Goat {
+    String color;
+    double weight;
+
+    public Goat(String color, double weight) {
+        this.color = color;
+        this.weight = weight;
+    }
+
+    /**
+     * 重写equals方法
+     * @param o  要比较的对象
+     * @return
+     */
+    @Override
+    public boolean equals(Object o) {
+        // 比较内存地址，如果是同一个内存地址，返回true
+        if (this == o) return true;
+        // 如果比较的对象为空，且被比较的对象o必须是同一个类型，则返回false
+        if (o == null || getClass() != o.getClass()) return false;
+        // 经过上面过滤，进行强制类型转换
+        Goat goat = (Goat) o;
+        // 自定义的相等规则
+        return this.color.equals(goat.color) && this.weight == goat.weight;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, weight);
+    }
+
+    @Override
+    public String toString() {
+        return "Goat{" +
+                "color='" + color + '\'' +
+                ", weight=" + weight +
+                '}';
+    }
+}
+
+```
+
+```java
+package com.minsusu.equalsTest;
+
+public class EqualsOverride {
+
+    public static void main(String[] args) {
+        Goat goat1 = new Goat("黑色",81.0);
+        Goat goat2 = new Goat("黑色",81.0);
+        // 使用"==",比较内存地址
+        System.out.println(goat1 == goat2 );  // false
+        // 使用重写的equals方法比较
+        System.out.println(goat1.equals(goat2));  //true
+    }
+}
+
+```
+
+
+
 
 
 
@@ -3319,7 +3388,7 @@ public class CollectionTest {
 
 - 通过`equals`比较相等
 
-- `hashCode`方法相等
+- `hashCode`方法返回值相等
 
   - 所有参与equals比较的成员变量都参与比较
 
@@ -3440,7 +3509,31 @@ public class HashSetTest1 {
 
 本质基于数组
 
-#### `hashSet`做了什么
+### `hashSet`存入元素的步骤
+
+-  hashSet会先调用元素的hashCode方法，返回一个int值
+- hashSet根据元素的hashCode返回值，计算该元素应该保存在hashSet底层数组的哪一个位置
+- hashSet会到底层数组中检查，该位置是否已经有元素
+  - 如果有元素，会把新的元素保存到数组的该位置
+  - 如果没有元素，此处就会形成链
+
+### 存入Entry的步骤
+
+-  HashMap会先调用key的hashCode方法，返回一个int值
+- HashMap根据key的hashCode值，计算该元素应该保存在hashMap底层数组的哪一个位置
+- hashMap会到底层数组中检查，该位置是否已经有元素
+  - 如果有Entry，会把新的Entry保存到数组的该位置
+  - 如果没有Entry，此处就会形成链
+
+### `hashMap`存入Entry的步骤
+
+-  HashMap会先调用key的hashCode方法，返回一个int值
+- HashMap根据key的hashCode值，计算该元素应该保存在hashMap底层数组的哪一个位置
+- hashMap会到底层数组中检查，该位置是否已经有元素
+  - 如果有Entry，会把新的Entry保存到数组的该位置
+  - 如果没有Entry，此处就会形成链
+
+#### 做了什么
 
 - 调用`hashCode`方法，返回int
 - `hashSet`会通过`hashCode`方法的返回值确定放在`hashSet`底层数组的位置
@@ -3481,7 +3574,7 @@ public class LinkHashSetTest {
 
 ### `TreeSet`
 
-`TreeSet`是基于”红黑树“
+`TreeSet`是基于”红黑树“，不需要重新hashCode方法
 
 #### 特征
 
@@ -3491,8 +3584,10 @@ public class LinkHashSetTest {
   - `TreeSet`中的元素是按照从小到大的排序
 - `TreeSet`怎么比较元素的大小
   - 自然排序——元素本身可以比较大小，元素类本身已经实现了`Comparable`接口、并实现该接口的`compareTo`方法，`java`自带的类基本都实现了`compareTo`方法
-  - 定制排序——不要求元素本身可以比较大小，但是要求创建`TreeSet`时传入`compartor`对象，该对象负责比较元素的大小
+  - 定制排序——不要求元素本身可以比较大小，但是要求创建`TreeSet`时传入`Comparator`对象，该对象负责比较元素的大小
 - `TreeSet`要求元素必须为同一个类型
+- `TreeSet`如何判断两个元素相等
+  - 只要两个元素通过`compareTo`(自然排序)，或者`compare`（定制排序）比较返回0，TreeSet就认为他们相等
 
 ```java
 package treeset;
@@ -3501,7 +3596,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * TreeSet自定义元素
+ * TreeSet自然排序
  */
 public class TreeSetTest1 {
     public static void main(String[] args) {
@@ -3769,11 +3864,90 @@ public class ListTest {
 
 Stack:被`ArrayDeque`所代替。
 
-## Map集合
+代码
 
-### HashMap
+```java
+package com.ArrayDequeTest;
 
-HashMap 是一个散列表，它存储的内容是键值对(key-value)映射。
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * 双端队列，既是栈，又是队列
+ * 队列
+ */
+public class ArrayDequeTestQueue {
+
+    public static void main(String[] args) {
+        Deque<String> deque =new ArrayDeque<>();
+        // 入队,先进先出
+        deque.offer("猪八戒");
+        deque.offer("孙悟空");
+        deque.offer("牛魔王");
+        deque.offer("红孩儿");
+        // 出队
+        System.out.println(deque.poll()); // 猪八戒
+        System.out.println(deque.poll());  // 孙悟空
+
+        // 获取队头的圆度，但并不出队
+        System.out.println(deque.peek());  // 牛魔王
+        System.out.println(deque.peek());  // 牛魔王
+
+    }
+}
+
+```
+
+```java
+package com.ArrayDequeTest;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * 双端队列，既是栈，又是队列
+ * 栈
+ */
+public class ArrayDequeTestStack {
+
+    public static void main(String[] args) {
+        Deque<String> queue =new ArrayDeque<>();
+        // 压栈,先进去的放在最底层
+        queue.push("猪八戒");
+        queue.push("孙悟空");
+        queue.push("牛魔王");
+        queue.push("红孩儿");
+        // 弹栈
+        System.out.println(queue.pop()); // 红孩儿
+        System.out.println(queue.pop());  // 牛魔王
+
+        // 获取最上次的栈
+        System.out.println(queue.peek());  // 孙悟空
+
+    }
+}
+
+```
+
+
+
+# Map集合
+
+地位与`collection`相同
+
+`key`不允许重复，通过equals方法比较返回`false`，后面的`key`会覆盖前面的`value`
+
+`key`是无序的
+
+``set`集合`key`的要求是完全一样的
+
+如果把`value`看做`null`，那么`key`就可以看做是一个`set`集合
+
+`Map`集合不能直接使用`forEach`和`Iterator`遍历
+
+## HashMap
+
+HashMap 是一个散列表，它存储的内容是键值对(key-value)映射，每个键值对成为Entry。value必须为对象。
 
 HashMap 实现了 Map 接口，根据键的 HashCode 值存储数据，具有很快的访问速度，最多允许一条记录的键为 null，不支持线程同步。
 
@@ -3784,10 +3958,10 @@ HashMap 继承于AbstractMap，实现了 Map、Cloneable、java.io.Serializable 
 HashMap 类位于 java.util 包中，语法格式如下：
 
 ```java
-package com.minsusu.集合.MapTest01;
-
+package com.maptest;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 
 /**
@@ -3797,24 +3971,35 @@ import java.util.*;
  *   Set<K>	keySet() 返回此映射中包含的键的 Set 视图。
  *
  */
-public class MapTest01 {
+public class HashMapTest {
     public static void main(String[] args) {
         Map<Integer,String> m = new HashMap<>();
         // 添加键值对
-        m.put(1,"a");
-        m.put(2,"b");
-        m.put(3,"c");
-        m.put(4,"d");
-        m.put(5,"c");
+        m.put(1,"语文");
+        m.put(2,"数学");
+        m.put(3,"英语");
+        m.put(4,"化学");
+        m.put(5,"物理");
+        m.put(5,"政治");  // 会覆盖前面的
         // 获取制定key的value
         String ss = m.get(3);
         System.out.println(ss);
+        // 删除元素
+        m.remove(5);
 
-
+        // 遍历所有的value
         Collection<String> S1 = m.values();
         for (String data:S1) {
             System.out.println(data);
         }
+
+        // 是否包含某个key
+        boolean x = m.containsKey(4);
+        System.out.println("是否包含4这个key："+x);
+
+        // 是否包含某个value
+        boolean y = m.containsValue("物理");
+        System.out.println("是否包含 物理在这个value ："+y);
 
 
         // 循环遍历
@@ -3828,7 +4013,7 @@ public class MapTest01 {
 
         }
         //2、使用foreach
-        for (Integer key:keys) {
+        for (Integer key:m.keySet()) {
             System.out.println("键"+key+"值："+m.get(key));
         }
 
@@ -3836,18 +4021,214 @@ public class MapTest01 {
         Set<Map.Entry<Integer,String>> s =  m.entrySet();
         Iterator<Map.Entry<Integer,String>> it = s.iterator();
         while (it.hasNext()){
-             Map.Entry<Integer,String> entry = it.next();
-             Integer key = entry.getKey();
-             String value = entry.getValue();
+            Map.Entry<Integer,String> entry = it.next();
+            Integer key = entry.getKey();
+            String value = entry.getValue();
             System.out.println("键："+key+",值："+value);
         }
 
+        // 4 使用for循环遍历
+        for (Iterator<Integer> i= m.keySet().iterator(); i.hasNext() ;){
+            Integer key = i.next();
+            System.out.println("kye是："+
+                    key + "value: " + m.get(key));
+        }
+        System.out.println("5 使用forEach方法遍历");
+        // 5 使用forEach方法遍历
+        m.forEach(new BiConsumer<Integer, String>() {
+            @Override
+            public void accept(Integer key, String value) {
+                System.out.println("键："+key+"--值："+value);
+            }
+        });
+        System.out.println("6 使用forEach方法遍历 lambda表达式");
+        //  6 使用forEach方法遍历 lambda表达式
+        m.forEach((key,value)->{
+            System.out.println("键："+key+"--值："+value);
+        });
+        
     }
 }
 
 ```
 
+### hashMap方法判断两个元素相等的条件
+
+- 通过`equals`比较相等
+
+- `hashCode`方法返回值相等
+
+  - 所有参与equals比较的`key`都参与比较
+
+  - 一般为了偶然相等，让参与比较的变量的hashCode乘上一个质数，一般乘31
+
+    - ```java
+      this.color.hashCode() * prime * prime+ (int)this.weight * prime+ this.xxx.hashCode();
+      ```
+
+- java系统中提供的类重写equals方法的，一遍都重写hashCode方法
+- 重写目的是为了让equals和hashCode值一致
+
+### hashMap底层实现
+
+本质基于数组
+
+### `hashMap`存入Entry的步骤
+
+-  HashMap会先调用key的hashCode方法，返回一个int值
+- HashMap根据key的hashCode值，计算该元素应该保存在hashMap底层数组的哪一个位置
+- hashMap会到底层数组中检查，该位置是否已经有Entry
+  - 如果有Entry，会把新的Entry保存到数组的该位置
+  - 如果没有Entry，此处就会形成链
+
+### `hashMap`取出Entry的步骤
+
+- 调用`hashCode`方法，返回int
+- `hashMap`会通过`hashCode`方法的返回值确定放在`hashSet`底层数组的位置
+- `hashMap`回到底层数组的该位置去检查，该位置是否含有要查找的Entry，
+  - 如果该位置趋势保存着要Entry，直接找出该Entry即可
+  - 如果该位置的Entry不是我们要找的key，此时就需要顺着该链、组个人的去找
+  - 链越长、超找性能越差
+- `hashMap(int initialCapacity, float loadFactor)`有两个性能选项
+  - `initialCapacity` 初始大小，默认为16
+  - `loadFactor `负载因子，默认值是0.75（装四分之三，自动扩大），越小则牺牲内存获得性能
+
+## `LinkHashMap`
+
+`HashMap`的子类，功能与`HashMap`相同
+
+不同点是，它会维护链，保存元素添加的顺序，记住Entry的添加顺序，性能较`HashMap`较慢
+
+### `TreeMap`
+
+`TreeMap`是基于”红黑树“，不需要重新hashCode方法
+
+#### 特征
+
+- 不允许重复
+- 比`HashMap`要慢
+- `TreeMap`实现了`sortedMap`，因此`TreeMap`会对元素按照`key`从小到大的排序
+  - `TreeMap`中的`key`是按照从小到大的排序
+- `TreeMap`怎么比较`key`的大小
+  - 自然排序——元素本身可以比较大小，`key`类本身已经实现了`Comparable`接口、并实现该接口的`compareTo`方法，`java`自带的类基本都实现了`compareTo`方法
+  - 定制排序——不要求`key`本身可以比较大小，但是要求创建`TreeMap`时传入`Comparator`对象，该对象负责比较`key`的大小
+- `TreeMap`要求`key`必须为同一个类型
+- `TreeMap`如何判断两个元素相等
+  - 只要两个`key`通过`compareTo`(自然排序)，或者`compare`（定制排序）比较返回0，TreeSet就认为他们相等
+
+自然排序
+
+```java
+package treeset;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * TreeSet自然排序
+ */
+public class TreeSetTest1 {
+    public static void main(String[] args) {
+        Goat goat1 = new Goat("黑色",45.3);
+        Goat goat2 = new Goat("黑色",35.8);
+        Set<Goat> set =new TreeSet<>();
+        set.add(goat1);
+        set.add(goat2);
+        System.out.println(set);
+
+    }
+}
+
+class Goat implements Comparable<Goat>{
+    private final String color;
+    private final double weight;
+
+    /**
+     * 如果当前对象大于要比较的对象，返回正整数
+     * 如果当前对象小于要比较的对象，返回负整数
+     * 如果当前对象等于要比较的对象，返回0
+     * @param target 要比较的对象
+     * @return 正整数 or 负整数 or 0
+     */
+    @Override
+    public int compareTo(Goat target) {
+        return Double.compare(this.weight, target.weight);
+    }
+
+    public Goat(String color, double weight){
+        this.weight =weight;
+        this.color = color;
+    }
+
+    @Override
+    public String toString(){
+        return "Goat [color="+color+"]"+"[weight="+weight+"]";
+    }
+}
+
+```
+
+定制排序
+
+```java
+package treeset;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * TreeSet定制排序
+ */
+public class TreeSetTest2 {
+    public static void main(String[] args) {
+        Goat1 goat1 = new Goat1("黑色",45.3);
+        Goat1 goat2 = new Goat1("白色",35.8);
+        // 使用匿名内部类的写法
+//        Set<Goat1> set =new TreeSet<>(new Comparator<Goat1>() {
+//
+//            /**
+//             * 如果当前对象大于要比较的对象，返回正整数
+//             * 如果当前对象小于要比较的对象，返回负整数
+//             * 如果当前对象等于要比较的对象，返回0
+//             */
+//            @Override
+//            public int compare(Goat1 o1, Goat1 o2) {
+//                return o1.getWeight() > o2.getWeight() ? 1: (o1.getWeight() < o2.getWeight() ? -1:0);
+//            }
+//        });
+        Set<Goat1> set =new TreeSet<>((o1, o2) ->
+              o1.getWeight() > o2.getWeight() ? 1: (o1.getWeight() < o2.getWeight() ? -1:0) );
+        set.add(goat1);
+        set.add(goat2);
+        System.out.println(set);
+
+    }
+}
+
+class Goat1 {
+    private final String color;
+    private final double weight;
 
 
+    public String getColor() {
+        return color;
+    }
 
+    public double getWeight() {
+        return weight;
+    }
+
+    public Goat1(String color, double weight){
+        this.weight =weight;
+        this.color = color;
+    }
+
+
+    @Override
+    public String toString(){
+        return "Goat [color="+color+"]"+"[weight="+weight+"]";
+    }
+}
+
+```
 
