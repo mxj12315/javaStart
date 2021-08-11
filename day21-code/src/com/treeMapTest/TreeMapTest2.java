@@ -22,7 +22,7 @@ public class TreeMapTest2 {
              */
             @Override
             public int compare(Apple o1, Apple o2) {
-                return o1.getWeight() > o2.getWeight() ? 1 : (o1.getWeight() < o2.getWeight() ? -1 : 0);
+                return Double.compare(o1.getWeight(), o2.getWeight());
             }
         });
         treeMap.put(new Apple("红色", 12.1), 10);

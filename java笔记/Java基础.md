@@ -4232,3 +4232,223 @@ class Goat1 {
 
 ```
 
+## `hashTable`
+
+被`hashMap`取代，`hashTable`的`key`和`value`都不允许为空，线程安全，性能差
+
+`hashMap`是线程不安全的，性能好
+
+## `Properties`
+
+继承`hashTable` ,它的key和value都是String类型Map
+
+```java
+package com.propertiesTest;
+
+import java.util.Properties;
+
+/**
+ * properties继承`hashTable` ,它的key和value都是String类型Map
+ */
+public class PropertiesTest1 {
+    public static void main(String[] args) {
+        Properties p = new Properties();
+        p.put("北京","琼");
+        p.put("云南","滇");
+        p.put("四川","蜀");
+
+        System.out.println(p);
+    }
+}
+
+```
+
+```java
+package com.propertiesTest;
+
+import java.io.*;
+import java.util.Properties;
+
+/**
+ * properties继承`hashTable` ,它的key和value都是String类型Map
+ */
+public class PropertiesTest2 {
+    public static void main(String[] args) throws IOException {
+        Properties p = new Properties();
+        File file = new File("E:\\java\\javaStart\\day21-code\\src\\com\\propertiesTest\\b.properties");
+        try(
+            InputStream inputStream = new FileInputStream(file);
+            )
+        {
+            // 加载文件到Properties中
+            p.load(inputStream);
+            System.out.println(p);  // {"重庆"="渝", "广西"="桂" }
+            // 设置属性
+            p.setProperty("江苏","苏");
+            System.out.println(p);
+            // 获取属性
+            String sh = p.getProperty("\u91cd\u5e86");
+            System.out.println(sh);
+            String gx = p.getProperty("广西");
+            System.out.println(gx);
+
+        }
+
+
+
+    }
+}
+
+```
+
+b.properties
+
+```properties
+\u91cd\u5e86 = \u6e1d
+\u5e7f\u897f = \u6842
+java = \u6211\u7231\u5b66\u4e60java\u7f16\u7a0b
+```
+
+## Collections工具类
+
+所有的方法都是静态方法
+
+synchronizedXxx:得到线程安全的Xxx结合
+
+## 集合collection总结
+
+8个接口：Collection->Set、List、Queue -> SortedSet、Deque、Map ->SortedMap
+
+10个实现类：HashSet、linkedHashSet、TreeSet、ArrayList、LinkedList、ArrayDeque、HashMap、LinkdHashMap、TreeMap、Properties
+
+3个工具类：Iterator、Comparable（自然排序）、Comparator（定制排序）
+
+1个工具类：Collections
+
+4个被淘汰的：Vector、Stack、hashTable、enumeration
+
+# java异常处理
+
+## 异常处理方式
+
+方式一：使用try...catch...内部处理
+
+语法格式：
+
+```java
+try{
+    // 正常的处理流程
+}catch(Exception1 | Exception2 | ……){
+    // 处理错误
+}finally{
+    // 无论如何都，即使是teturn会执行，即使是return
+    // 除非system.exit或者runtime.exit来阻止
+}
+```
+
+方式二：使用try…with…resources，java7
+
+- 自动关闭的资源必须在try的（）中声明并创建，不可以在外部声明，括号内f赋值
+
+- 自动关闭的资源必须要实现Closeable或者AutoCloseable接口，确保资源是可以自动关闭的
+
+- 自带隐式的finally
+
+```java
+try(
+   // 需要自动关闭资源的代码
+){
+  // 正常的代码
+}
+/*  不需要
+catch(){
+
+}
+final{
+
+}
+*/
+```
+
+## 异常处理流程
+
+异常处理流程每次只会进入一个catch块
+
+异常处理时，先处理小异常，在处理大异常
+
+![异常体系图](images/%E5%BC%82%E5%B8%B8%E4%BD%93%E7%B3%BB%E5%9B%BE.png)
+
+Exception ex对象默认被隐式的final修饰
+
+## final/finally/finalize区别
+
+final：修饰符。用于修饰变量、类、方法。
+
+finally：异常处理中的最后一个块。
+
+finalize：只是Object的一个方法，所有对象被回收之前都会调用该方法，又jvm自动调用
+
+## Throwable/throws/throw
+
+`Throwable`：所有`Expection`和`Error`异常类的父类
+
+`throws`：方法签名上，抛出异常
+
+`throw`：抛出异常对象，`throw new Exception`，可以在方法体，构造方法、初始化代码块中
+
+
+
+## checked异常和Runtime异常
+
+`runtime`异常：所有`RuntimeException`及其子类的实例，都是`runtime`异常，不需要处理
+
+`Checked`异常：不是`RuntimeException`，就是`Checked`异常，要么使用`try…catch…`要么抛出异常，否则无法编译通过
+
+## 自定义异常类
+
+### `Runtime`异常
+
+如果要定义`Runtime`异常，就继承`RuntimeException`异常类
+
+### `Checked`异常
+
+如果要定义`Checked`异常，就继承`Exception`
+
+### catch和throw一起使用
+
+作用：可以将`checked`异常转换为`runtime`异常
+
+```java
+package exceptiontest;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
+/**
+ * catch和throw一起使用
+ */
+public class ExceptionTest5 {
+    public static void main(String[] args) {
+        // 这种写法必须要处理checked异常
+        // FileInputStream fls = new FileInputStream("fileName");
+
+        // 这种将checked异常转为Runtime异常，不需要处理
+        new ExceptionTest5().test("a.txt");
+    }
+
+    // catch和throw一起使用 抛出自定义异常对象
+    public void test(String fileName) throws IllegalArgumentException {
+        try {
+            // 会抛出FileNotFound的checked异常
+            new FileInputStream("fileName");
+        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+            System.out.println(fileName + "文件不存在");
+            // 将checked异常转为Runtime异常
+            throw new IllegalArgumentException("没找到");
+        }
+    }
+}
+
+```
+
