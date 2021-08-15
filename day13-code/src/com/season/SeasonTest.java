@@ -8,8 +8,10 @@ public class SeasonTest {
         // 枚举赋值，使用已有的实例进行赋值
         Season s1 = Season.SPRING;
         Season s3 = Season.AUTUMN;
+        Season winter = Season.WINTER;
         System.out.println(s1);
         System.out.println(s3);
+        System.out.println(winter);
         // 获取枚举的名字
         String name = s1.name();
         // 返回所有枚举实例
