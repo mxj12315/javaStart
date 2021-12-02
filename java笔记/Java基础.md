@@ -4526,8 +4526,430 @@ panel：可以作为容器容纳其他的组件，但是不能独立的存在，
 
 箱式布局管理器。它把若干组件按水平或垂直方向依次排列放置。Swing 提供了一个实现了 BoxLayout 的容器组件Box。使用 Box 提供的静态方法，可快速创建水平/垂直箱容器(Box)，以及填充组件之间空隙的不可见组件。用水平箱和垂直箱的组合嵌套可实现类似于 GridBagLayout 的效果，但没那么复杂。
 
+
+
+
 # I/O流
 
 ## File
 
+在 Java 中，File 类是 java.io 包中唯一代表磁盘文件本身的对象。File 类定义了一些与平台无关的方法来操作文件，File类主要用来获取或处理与磁盘文件相关的信息，像文件名、 文件路径、访问权限和修改日期等，还可以浏览子目录层次结构。
+  File 类表示处理文件和文件系统的相关信息。也就是说，File 类不具有从文件读取信息和向文件写入信息的功能，它仅描述文件本身的属性。
+
+## 流分类
+
 既可以包装目录，也可以包装文件
+
+| 流分类 | 使用分类               | 字节输入流               | 字节输出流             | 字符输入流          | 字符输出流          |
+| ------ | ---------------------- | ------------------------ | ---------------------- | ------------------- | ------------------- |
+|        | 抽象基类               | *InputStream*            | *OutputStream*         | *Reader*            | *Writer*            |
+| 节点流 | 访问文件               | **FileInputStream**      | **FileOutStream**      | **FileReader**      | **FileWriter**      |
+|        | 访问数值               | **ByteArrayInputStream** | **ByteArrayOutStream** | **CharArrayReader** | **CharArrayWriter** |
+|        | 访问管道               | **PipedInputStream**     | **PipedOutStream**     | **PipedReader**     | **PipedWriter**     |
+|        | 访问字符串             |                          |                        | **StringReader**    | **StringWriter**    |
+| 处理流 | 缓冲流                 | BufferedInputStream      | BufferedOutputStream   | BufferedReader      | BufferedWriter      |
+|        | 转换流(字节流转字符流) |                          |                        | InputStreamReader   | OutputStreamWriter  |
+|        | 对象流                 | ObjectInputStream        | ObjectOutputStream     |                     |                     |
+|        | 抽象基类（过滤）       | *FilterInputStream*      | *FilterOutputStream*   | *FilterReader*      | *FilterWriter*      |
+|        | 打印流                 |                          | PrintStream            |                     | PrintWriter         |
+|        | 推回输入流             | PushbackInputStream      |                        | PushbackReader      |                     |
+|        | 特殊流                 | DataInputStream          | DataOutputStream       |                     |                     |
+
+### 输入流
+
+创建输入流，得到一根有水的水管
+
+可以使用如下的方法读取水
+
+- read（）每次取一滴水
+- int read(buff) 每次取N滴水放入数组中，返回实际读取的水滴数
+- int read(buff, offset, len) 每次取N滴水放入数组的一部分，返回世纪读取的水滴数
+
+### 输出流
+
+创建输出流，得到一根空的水管
+
+可以使用如下的方法存入水滴
+
+- write(int) 每次存入一滴水
+- void write(buff) 将数组中的N滴水放入输出流
+- void write(buff, offset, len) 将数组中间一段的N滴水放入输出流
+
+
+
+### 重定向输入输出
+
+标准输出System.out默认是电脑屏幕
+
+```java
+Syestem.setOut();  // 改变系统的标准输出
+```
+
+标准输出System.in默认是键盘
+
+```java
+Syestem.setIn();  // 改变系统的标准输入
+```
+
+## 序列化和反序列化
+
+序列化：将内存中的java对象转变为字节文件（二进制文件），该二进制文件可以用于永久保存到硬盘或者用于网络传输
+
+反序列化：读取序列化的二进制文件数据，将数据恢复成为原始的java对象
+
+### Serializable 接口 
+
+实现该接口无需实现任何方法，实现接口的对象即可被序列化
+
+在创建类的时候实现一个Serializable接口即可，但是类的变量是一个不可以序列化的类，那么该类的成员类不可以被序列化
+
+#### 对象引用序列化
+
+当程序多次writeObject同一个对象时，其实并未输出多个对象，程序多次调用readObject时恢复的是同一个对象，只有第一次执行序列化时候才真正输出该对象的序列化，以后再次输出的都是该对象的序列化版本号，换言之，在第一次序列化后修改该对象的field时，再次序列化对序列化的结果没有任何的影响
+
+#### transient关键字
+
+有时候希望将类的某些field排除在序列化之外，这些field可能是包含重要的、敏感的信息，就可以使用transient修饰该字段。比如日常生活中的账号、密码信息，一般用transient修饰排除在序列化之外
+
+#### 自定义序列化
+
+
+
+
+
+# 多线程编程
+
+•一般而言，进程包含如下三个特征：
+
+–独立性：进程是系统中独立存在的实体，它可以拥有自己独立的资源，每一个进程都拥有自己私有的地址空间。在没有经过进程本身允许的情况下，一个用户进程不可以直接访问其他进程的地址空间。
+
+–动态性：进程与程序的区别在于：程序只是一个静态的指令集合，而进程是一个正在系统中活动的指令集合。在进程中加入了时间的概念。进程具有自己的生命周期和各种不同的状态，这些概念在程序中都是不具备的。
+
+–并发性：多个进程可以在单个处理器上并发执行，多个进程之间不会互相影响。
+
+## 继承Thread
+
+`run()`方法是线程执行体，就是该线程要完成的事情
+
+### 实现步骤
+
+创建`Thread`子类的实例，在主线程代码**之前**调用`start()`方法
+
+```java
+/**
+ * 第一种多线程 继承Thread
+ */
+public class ThreadTest {
+    public static void main(String[] args) {
+        Hello hello = new Hello();
+        // hello.run(); // 不是多线程
+        hello.start();
+        for (int i = 0; i < 10000; i++) {
+            // 获取当前线程的名字
+            System.out.println(Thread.currentThread().getName() + ">>>" + i);
+        }
+    }
+}
+
+
+class Hello extends Thread {
+    @Override
+    public void run() {
+        for (int i = 0; i < 10000; i++) {
+            // 获取当前线程的名字
+            System.out.println(Thread.currentThread().getName() + ">>>" + i);
+        }
+    }
+}
+```
+
+## 实现Runnable接口
+
+`run()`方法是线程执行体，就是该线程要完成的事情
+
+### 实现步骤
+
+创建`Runnable`子类的实例
+
+以`Runnable`实现类为实例为`target`，创建`Thread`实例，主线程代码**之前**调用`start()`方法
+
+```java
+/**
+ * 第二种创建多线程的方法Runnable
+ */
+public class RunnableTest {
+    public static void main(String[] args) {
+        // 第二步 创建`Runnable`子类的实例
+        HelloRunnable target = new HelloRunnable();
+        // 第三步 以`Runnable`实现类为实例为`target`，创建`Thread`实例，主线程代码**之前**调用`start()`方法
+        new Thread(target).start();
+
+        // 主线程中的代码
+        for (int i = 0; i < 10000; i++) {
+            System.out.println(Thread.currentThread().getName() + ">>>" + i);
+        }
+    }
+}
+
+// 第一步 实现Runnable接口
+class HelloRunnable implements Runnable{
+    @Override
+    public void run() {
+        for (int i = 0; i < 10000; i++) {
+            System.out.println(Thread.currentThread().getName() + ">>>" + i);
+        }
+    }
+}
+```
+
+## 使用Callable接口
+
+`Callable`是`Runable`的增强版
+
+- `Callable`的`call`方法有返回值
+- `Callable`的`call`方法声明抛出`checked`异常，因此重写`call`方法也可以抛出异常
+
+### 实现步骤
+
+1. 实现`Runable`接口，并重写`run()`方法
+2. 常见`Callable`子类的实例
+3. 将`Callable`实现类的实例包装成`FutureTask`对象
+4. 以`FutureTask`的实例当做`target`传入 创建`Thread`实例，主线程代码之前调用`start()`方法
+
+```java
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+
+/**
+ * 使用Callable创建多线程
+ */
+public class CallableTest  {
+    public static void main(String[] args) {
+        // 第二步  实现Callable实现类的实例
+        HelloCallable helloCallable = new HelloCallable();
+        // 第三步 将Callable实现类的实例包装成FutureTask
+        FutureTask<Integer> futureTask = new FutureTask(helloCallable);
+        // 第四步  以FutureTask的实例当做target传入 创建`Thread`实例，主线程代码之前调用start()方法
+        new Thread(futureTask).start();
+
+
+        // 主线程中的代码
+        for (int i = 0; i < 10000; i++) {
+            System.out.println(Thread.currentThread().getName() + ">>>"+ i);
+        }
+    }
+
+
+}
+
+// 第一步 实现Callable接口
+class HelloCallable implements Callable<Integer>{
+    @Override
+    public Integer call() throws Exception{
+        int result = 0;
+        for (int i = 0; i < 10000; i++) {
+            System.out.println(Thread.currentThread().getName() + ">>>"+ i);
+            result = i;
+        }
+
+        return result;
+    }
+}
+
+```
+
+### 关于实现`Callable`接口注意点
+
+1. `Callable`和`FutureTask`的泛型必须保持一直，因为它们都指定了call()方法的返回值类型
+2. 不要去调用`Callable`的`call()`方法（就像`Thread`调用`run()`方法一样），否则就不是多线程
+3. 程序通过`FutureTask`的`get()`方法来获取返回值
+   1. 一旦程序使用`FutureTask`的`get()`方法之后，程序必须要等到线程执行体`call()`方法执行完成，才会有返回值
+
+
+
+
+
+## 线程的声明周期
+
+![线程声明周期](images/%E7%BA%BF%E7%A8%8B%E5%A3%B0%E6%98%8E%E5%91%A8%E6%9C%9F.png)
+
+### 新建 new
+
+程序刚刚创建Thread类或者Thread子类的实例，此时线程对象只是一个普通的java对象
+
+### 就绪 ready
+
+程序调用线程对象的star()方法后，该程序就处于就绪状态，还没有开始执行
+
+### 运行 running
+
+得到CPU，开始运行，何时进入运行状态，不收人为控制
+
+程序一直处于就绪和运行状态之间来回切换
+
+### 阻塞 blocked
+
+阻塞状态程序被暂停无法运行
+
+### 死亡 dead
+
+线程死亡
+
+1. 程序执行完成
+2. 程序遇到未捕捉的异常或者错误
+3. stop()方法结束线程
+
+不要使用suspend、resume、stop控制线程，负责会导致线程死锁
+
+## jion线程
+
+一个线程在执行到某个点，它必须等待另外一个线程执行完后，它才能向下执行，那么这个被等待的线程就是jion线程，例如：A洗菜，需要等B洗锅刷完
+
+```java
+/**
+ * join等待线程
+ */
+public class JoinTest {
+    public static void main(String[] args) throws InterruptedException {
+        // 子线程 B在刷锅
+        Thread t = new Thread(){
+            @Override
+            public void run(){
+                for (int i = 0; i < 100; i++) {
+                    System.out.println(Thread.currentThread().getName() + ">>>>>" + i);
+                }
+            }
+        };
+        t.start();
+
+
+        // 主线程   A洗菜
+        for (int i = 0; i < 100; i++) {
+           // A洗菜主线程
+            System.out.println(Thread.currentThread().getName() + ">>>>>" + i);
+
+            if (i==20){
+                //  等待B洗锅完成,A主线程才能运行
+                t.join();
+            }
+        }
+    }
+}
+
+
+```
+
+## 线程sleep
+
+`sleep(long millis)`是一个类方法，让当前执行的线程进入阻塞状态，经常用于暂停程序的执行
+
+`Thread.sleep(long millis)`在那个线程体内，就会暂停哪个线程
+
+```java
+/**
+ * sleep(long millis)，强制让当前线程进入阻塞状态
+ */
+public class SleepTest {
+    public static void main(String[] args) throws InterruptedException {
+        // 子线程
+        Thread t = new Thread(){
+            @Override
+            public void run(){
+                for (int i = 0; i < 100; i++) {
+                    System.out.println(Thread.currentThread().getName() + "----" +i );
+                }
+            }
+        };
+        t.start();
+
+
+        // 主线程
+        for (int i = 0; i < 100; i++) {
+            System.out.println(Thread.currentThread().getName() + "----" +i );
+            // 当i==30时候让主线程强制休眠
+            if (i == 30 ){
+                // 让主线程休眠
+                Thread.sleep(2);
+            }
+        }
+    }
+}
+
+
+
+out:
+……
+main----28
+main----29
+main----30
+Thread-0----0
+Thread-0----1
+Thread-0----2
+……
+```
+
+
+
+## 后台线程
+
+后台线程：精灵线程、守护线程、daemon线程
+
+后台线程是为前台线程服务的，如果前台线程死亡dead时，后台线程自动死亡，比如java的JVM中的GC垃圾回收线程就是后台线程
+
+后台线程两种方式
+
+1. 主动调用`setDaemon(boolen on)`方法
+2. 在后台线程中启动的线程，本身就是后台线程
+
+`setDaemon(boolen on)`必须要在`start()`方法之前
+
+```java
+/**
+ * daemon守护线程
+ */
+public class DaemonTest {
+    public static void main(String[] args) throws IllegalThreadStateException{
+        // 子线程
+        Thread t = new Thread(()->{
+            for (int i = 0; i < 100; i++) {
+                System.out.println(Thread.currentThread().getName() + "----" +i );
+            }
+        });
+
+        // 将T线程设置为后台线程
+        // 必须先设置，在启动
+        t.setDaemon(true);  // 当所有的前台线程死亡，那么后台线程自动死亡
+        t.start();
+
+        // 错误的
+        // t.start();
+        // t.setDaemon(true);
+
+
+        //  主线程没有什么代码
+        // 改代码主线程很快执行完成，导致后台线程直接死亡
+
+
+    }
+}
+
+```
+
+## 线程优先级
+
+优先级越高，则线程就获得更多的执行机会
+
+改变线程的优先级：调用线程对象`setPrioroty(int)`方法
+
+java中的优先级1-10级，但是有些操作系统并不支持10个优先级，为了更好的跨平台，建议使用3个优先级：
+
+1. MIN_PRIORITY:1
+2. NORM_PRIORITY:5
+3. MAX_PRIORITY:10
+
+
+
+
+
+
+

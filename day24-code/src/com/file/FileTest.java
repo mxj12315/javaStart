@@ -11,6 +11,11 @@ public class FileTest {
         boolean absolute = file.isAbsolute();  // 是否是绝对路径
         boolean directory = file.isDirectory();// 是否是目录
         boolean exists = file.exists();  // 是否存在
+        String[] files = file.list();
+        for (String s:files){
+            System.out.println(s);
+        }
+
 
         System.out.println(absolutePath);
         System.out.println(canonicalFile);
