@@ -4949,7 +4949,207 @@ java中的优先级1-10级，但是有些操作系统并不支持10个优先级�
 
 
 
+## 线程安全
 
+在多线程环境下，多条线程同时修改一份竞争资源（公共资源），此时就会发生线程安全问题
+
+临界区：访问、修改并发资源的代码区域
+
+### 同步代码块上锁
+
+从语法角度上讲，任何对象都可以作为同步监视器，但是选取时必须选择公共资源作为同步监视器
+
+同步监视器的原理，公共资源就是同步监视器
+
+1. 任何的线程在进入同步代码块之前，必须对该同步监视器加锁；
+2. 必须等到该线程离开同步代码块，该线程才会释放同步监视器的锁。
+
+缺点：导致性能降低，要精确控制同步代码块的大小
+
+```java
+synchronized(同步监视器){
+    同步代码块
+}
+```
+
+```java
+/**
+ * 线程安全,修改之后
+ * synchronized(共享资源/竞争资源){
+ * 线程执行代码
+ * }
+ */
+public class ThreadSafety_copy {
+    public static void main(String[] args) throws InterruptedException {
+        Bank_copy bank = new Bank_copy();
+        bank.setAccountNo("中国bank");
+        bank.setMoney(1000);
+        System.out.println("取款之前总资产为：" + bank.getMoney());
+        // A取钱
+        new DrawMoney_copy(bank, 1000).start();
+        new DrawMoney_copy(bank, 1000).start();
+    }
+}
+
+
+//  银行类
+class Bank_copy {
+    private String accountNo;// 银行账户
+    private int money; // 银行的金额
+
+    public String getAccountNo() {
+        return accountNo;
+    }
+
+    public void setAccountNo(String accountNo) {
+        this.accountNo = accountNo;
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public void setMoney(int money) {
+        this.money = money;
+    }
+}
+
+
+// 取钱类
+class DrawMoney_copy extends Thread {
+    private  Bank_copy bank;
+    private int amount;// 取钱的金额
+
+    public DrawMoney_copy(Bank_copy bank, int amount) {
+        this.bank = bank;
+        this.amount = amount;
+    }
+
+    /**
+     * 取钱的方法
+     */
+    @Override
+    public void run() {
+        // 同步代码块
+        synchronized (bank) {
+            if (amount <= bank.getMoney()) {
+                System.out.println(bank.getAccountNo() + "取到了：" + amount + "元");
+                bank.setMoney(bank.getMoney() - amount);
+                try {
+                    sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("剩余总资产为：" + bank.getMoney());
+            } else {
+                System.out.println("余额不足");
+            }
+        }
+    }
+}
+```
+
+### 同步方法上锁
+
+使用synchronized关键字修饰方法 此时整个方法都是同步代码块
+
+对于实例方法，同步监视器就是this；对于类方法，同步监视器就是类本身
+
+同步代码块和同步方法的区别：同步代码块是显示的指定同步监视器，同步方法是隐式的使用this或者类本身作为同步监视器
+
+```java
+/**
+ * 线程安全,修改之后
+ * synchronized 修饰方法
+ * }
+ */
+public class ThreadSafety同步方法 {
+    public static void main(String[] args) throws InterruptedException {
+        Bank同步方法 bank = new Bank同步方法();
+        bank.setAccountNo("中国bank");
+        bank.setMoney(1000);
+        System.out.println("取款之前总资产为：" + bank.getMoney());
+        // A取钱
+        new DrawMoney同步方法(bank, 1000).start();
+        new DrawMoney同步方法(bank, 1000).start();
+    }
+}
+
+
+//  银行类
+class Bank同步方法 {
+    private String accountNo;// 银行账户
+    private int money; // 银行的金额
+
+    public String getAccountNo() {
+        return accountNo;
+    }
+
+    public void setAccountNo(String accountNo) {
+        this.accountNo = accountNo;
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public void setMoney(int money) {
+        this.money = money;
+    }
+	
+    // 取钱的方法
+    public synchronized void draw(int amount) {
+        if (amount <= getMoney()) {
+            System.out.println(getAccountNo() + "取到了：" + amount + "元");
+            setMoney(getMoney() - amount);
+            System.out.println("剩余总资产为：" + getMoney());
+        } else {
+            System.out.println("余额不足");
+        }
+    }
+}
+
+
+// 取钱类
+class DrawMoney同步方法 extends Thread {
+    private Bank同步方法 bank;
+    private int amount;// 取钱的金额
+
+    public DrawMoney同步方法(Bank同步方法 bank, int amount) {
+        this.bank = bank;
+        this.amount = amount;
+    }
+
+    
+    @Override
+    public void run() {        
+        bank.draw(amount);
+    }
+
+}
+```
+
+### 使用Lock上锁
+
+jdk1.5中提供的
+
+为竞争资源装一把”锁“
+
+```java
+// 买一把锁
+Lock lk = new ReentrantLock();
+lk.lock(); // 上锁
+try{
+    // 共享资源的代码
+}finally{
+	lk.unlock(); // 开锁
+}
+    
+```
+
+## 线程通讯
+
+线程通讯解决的问题是：两个线程之间有关联，一条线程负责生成，另一条线程负责消费，线程之间的通讯就是解决连个线程之间的协调问题
 
 
 
