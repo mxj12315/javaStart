@@ -19,9 +19,11 @@ public class ListenerInstallerProcessTools {
                 // 获取字段上的注解
                 ListenerInstaller annotation = f.getAnnotation(ListenerInstaller.class);
                 if (annotation != null) {
+                    // 通过注解获取相关信息
                     Class<?> listener = annotation.listener();// 获取注解的listener属性
                     String msg = annotation.msg();// 获取注解的msg属性
 
+                    // 添加时间，与注解无关
                     ActionListener myActionListener = (ActionListener) listener.getConstructor(String.class)/*获取类*/.newInstance(msg);/*创建实例*/
                     AbstractButton button = (AbstractButton) o; // 将o转换为button
                     button.addActionListener(myActionListener); // 为按钮添加事件
