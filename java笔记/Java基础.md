@@ -6130,3 +6130,129 @@ Proxy有如下一个构造器：Proxy(Proxy.Type type, SocketAddress sa)：创�
 
 A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
 
+# 注解Annotation
+
+## @Retention
+
+- @Retention(RetentionPolicy.SOURCE)
+  - 源码时注解，一般用来作为编译器标记。就比如Override, Deprecated（java9中新增）, SuppressWarnings这样的注解。（这个我们一般都很少自定义的）
+- @Retention(RetentionPolicy.RUNTIME)
+  - 运行时注解，一般在运行时通过反射去识别的注解。
+- @Retention(RetentionPolicy.CLASS)
+  - 编译时注解，在编译时处理。
+
+
+## @Target(ElementType.TYPE)
+
+- 表示该注解用来修饰哪些元素。并可以修饰多个
+
+  ```java
+  @Target(ElementType.TYPE)
+  接口、类、枚举、注解
+  @Target(ElementType.FIELD)
+  字段、枚举的常量
+  @Target(ElementType.METHOD)
+  方法
+  @Target(ElementType.PARAMETER)
+  方法参数
+  @Target(ElementType.CONSTRUCTOR)
+  构造函数
+  @Target(ElementType.LOCAL_VARIABLE)
+  局部变量
+  @Target(ElementType.ANNOTATION_TYPE)
+  注解
+  @Target(ElementType.package)
+  
+  ```
+
+
+
+## @Inherited
+
+- 该注解的字面意识是继承，但你要知道注解是不可以继承的。@Inherited是在继承结构中使用的注解。
+
+  - 如果你的注解是这样定义的：
+
+    - 当你的注解定义到类A上，此时，有个B类继承A，且没使用该注解。但是扫描的时候，会把A类设置的注解，扫描到B类上。
+
+    ```
+    @Inherited
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Test {
+    	//...
+    }
+    ```
+
+## 注解的默认值
+
+- 注解可以设置默认值，有默认值的参数可以不写。
+
+  ```
+  @Retention(RetentionPolicy.CLASS)
+  @Target(ElementType.TYPE)
+  public @interface TestAni {
+      int id();  //注解参数
+      String name() default "default";
+  }
+  
+  //使用
+  @TestAni(id = 1) //name有默认值可以不写
+  class Test{
+  }
+  ```
+
+## 注解的继承
+
+- 这里讲的继承并不是通过@Inherited修饰的注解。这个“继承”是一个注解的使用技巧，使用上的感觉类似于依赖倒置，来自于ButterKnife源码。
+
+  - 这是ButterKnife的OnClick 注解。特殊的地方在于**@OnClick修饰了注解@ListenerClass**，并且设置了一些只属于@OnClick的属性。
+  - 那这样的作用是什么呢？凡是修饰了@OnClick的地方，也就自动修饰了@ListenerClass。类似于@OnClick是@ListenerClass的子类。而ButterKnife有很多的监听注解@OnItemClick、@OnLongClick等等。这样在做代码生成时，不需要再单独考虑每一个监听注解，只需要处理@ListenerClass就OK。
+
+  ```
+  @Target(METHOD)
+  @Retention(CLASS)
+  @ListenerClass(
+      targetType = "android.view.View",
+  	setter = "setOnClickListener",
+  	type = "butterknife.internal.DebouncingOnClickListener",
+  	method = @ListenerMethod(
+      	name = "doClick",
+      	parameters = "android.view.View"
+  	)
+  )
+  public @interface OnClick {
+  	/** View IDs to which the method will be bound. */
+  	int[] value() default { View.NO_ID };
+  }
+  ```
+
+
+## 注解中方法
+
+- 看自定义注解部分内容代码，思考下面问题……
+
+  ```
+  //@Retention用来修饰这是一个什么类型的注解。这里表示该注解是一个编译时注解。
+  @Retention(RetentionPolicy.CLASS)
+  //@Target用来表示这个注解可以使用在哪些地方。
+  // 比如：类、方法、属性、接口等等。这里ElementType.METHOD 表示这个注解可以用来修饰：方法
+  @Target(ElementType.METHOD)
+  //这里的interface并不是说OnceClick是一个接口。就像申明类用关键字class。申明注解用的就是@interface。
+  public @interface OnceClick {
+      //返回值表示这个注解里可以存放什么类型值
+      int value();
+  }
+  ```
+
+###  Annotation里面的方法为何不能是private
+
+- Annotation里面的方法为何不能是private？
+  - 只能用public或默认(default)这两个访问权修饰.例如,String value();不能是private；因为它是提供给外部使用的。
+  - ![image](https://upload-images.jianshu.io/upload_images/4432347-3c8745c4458fa30c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+
+### Annotation里面的方法参数有哪些
+
+- 参数只能使用基本类型byte,short,char,int,long,float,double,boolean八种基本数据类型和 String,Enum,Class,annotations等数据类型,以及这一些类型的数组.例如,String value();这里的参数类型就为String;　
+
