@@ -1,3 +1,5 @@
+[TOC]
+
 
 
 # 前奏
@@ -5151,5 +5153,980 @@ try{
 
 线程通讯解决的问题是：两个线程之间有关联，一条线程负责生成，另一条线程负责消费，线程之间的通讯就是解决连个线程之间的协调问题
 
+### 传统方式
 
+借助于Object的wait和notify等方法
+
+Object中提供了如下的方法
+
+Object.wait() 可以指定无限等待、也可以指定等待时间
+
+Object.notify() /Object.notifyAll() 发出通知。唤醒wait() 状态的一条线程/所有线程
+
+注意：从语法角度讲，任何的对象都可以调用以上方法，但是实际只有”同步监视器“，才可以调用
+
+### Lock+Condition方式
+
+Lock实例可以产生Condition对象，Condition中提供了一下方法
+
+Condition.await() 可以指定无限等待、也可以指定等待时间
+
+Condition.signal() /Object.signalAll() 发出通知。唤醒await() 状态的一条线程/所有线程
+
+```java
+class BoundedBuffer {
+   final Lock lock = new ReentrantLock();
+   final Condition notFull  = lock.newCondition(); 
+   final Condition notEmpty = lock.newCondition(); 
+
+   final Object[] items = new Object[100];
+   int putptr, takeptr, count;
+
+   public void put(Object x) throws InterruptedException {
+     lock.lock();
+     try {
+       while (count == items.length) 
+         notFull.await();
+       items[putptr] = x; 
+       if (++putptr == items.length) putptr = 0;
+       ++count;
+       notEmpty.signal();
+     } finally {
+       lock.unlock();
+     }
+   }
+
+   public Object take() throws InterruptedException {
+     lock.lock();
+     try {
+       while (count == 0) 
+         notEmpty.await();
+       Object x = items[takeptr]; 
+       if (++takeptr == items.length) takeptr = 0;
+       --count;
+       notFull.signal();
+       return x;
+     } finally {
+       lock.unlock();
+     }
+   } 
+ }
+ 
+```
+
+## 线程组
+
+ThreadGroup线程组
+
+Thread(ThreadGroup group, Runnable target)   分配新的 Thread 对象
+注意：一旦线程加入指定的线程的线程组，中途不得改变
+
+常用方法：
+
+ int	activeCount() ： 返回此线程组中活动线程的条数。
+
+void	setMaxPriority(int pri)： 设置线程组的最高优先级，以后所有的的线程优先级不能超过它
+
+void	destroy() ：销毁此线程组及其所有子组。 
+
+void	setDaemon(boolean daemon) 更改此线程组的后台程序状态。
+
+ void	uncaughtException(Thread t, Throwable e) 当此线程组中的线程因为一个未捕获的异常而停止，并且线程没有安装特定 Thread.UncaughtExceptionHandler 时，由 JVM 调用此方法。    
+
+## 线程池
+
+进程的创建成本非常大，线程创建相对进程小；
+
+对于java而言，每个线程创建都要创建一个Thread对象，那么成本是非常大的，因此要使用线程池，重复利用Thread对象
+
+缓存池：牺牲空间获取时间
+
+线程池：池里的线程越多，内存开销越大，任务完成越快
+
+使用线程池的步骤：
+
+1. 创建线程池
+   1. ExecutorService代表线程池。ScheduleExecutorService代表有调度功能的线程池
+   2. Executors：工具类，专门负责创建线程池
+      1. ExecutorService pool = Executors.newFixedThreadPool(3);
+      2. newFixedThreadPool(int);创建固定的线程数的线程池，任务数超过线程池的线程数会排队等待
+2. 将Runable或者Callable接口的实现类提交给线程池
+   1. pool.submit(Runable runable)
+   2. pool.submit(Runnable runnable);
+3. 关闭线程池
+   1. pool.shutdown() 等到线程中所有任务完成，关闭线程池
+   2. pool.shutdownNow() 立即关闭线程池，返回未完成的线程任务（Runable或者Callable接口的实例）
+
+## 网络编程
+
+### 网络分层
+
+应用层（Application）、表示层（Presentation）、会话层（Session）、传输层（Transport）、网络层（Network）、数据链路层（Data Link）、物理层（Physical）
+
+![网络分层](images/%E7%BD%91%E7%BB%9C%E5%88%86%E5%B1%82.gif)
+
+IP：Internet protocol 负责为每一个物理节点的编号，相当于每一栋楼的编号
+
+IPV4：32位的2进制数
+
+IPV6：128位的2进制数
+
+端口：一个物理设备上有多个网络程序运行，为了数据能够准确的进入物理设备的哪一个程序，于是为每一个程序指定一个端口，相当于每一栋都内对于的房间号，端口支持2的16次方个
+
+要指定到达的目的地，需要指定IP+端口（楼的编号+房间号）
+
+公共端口：0~1023   HTTP：80端口  FTP：21  数据库：3306  POP3：110
+
+注册端口：1024~49151    SqlService:1443  Oracle:1521   Mysql:3306
+
+DNS：一般指域名系统，是互联网的一项服务。它作为将域名和IP地址相互映射的一个分布式数据库，能够使人更方便地访问互联网。DNS由域名解析器和域名服务器组成。域名解析器是指把域名指向网站空间IP，让人们通过注册的域名可以方便地访问到网站的一种服务。
+
+URLEncode:编码为看不懂的字符
+
+URLDecode:解码为看的懂的字符
+
+## TCP协议
+
+TCP/IP通信协议是一种可靠的网络协议，它在通信的两端各建立一个Socket，从而在通信的两端之间形成网络虚拟链路。一旦建立了虚拟的网络链路，两端的程序就可以通过虚拟链路进行通信。Java对基于TCP协议的网络通信提供了良好的封装，Java使用Socket对象来代表两端的通信接口，并通过Socket产生IO流来进行网络通信。
+
+### 客户端Client
+
+```java
+通过Socket建立对象并指定要连接的服务端主机以及端口。
+Socket s = new Socket(“192.168.1.1”,9999);
+OutputStream out = s.getOutputStream();
+out.write(“hello”.getBytes());
+s.close();
+```
+
+### 服务端Server
+
+```java
+建立服务端需要监听一个端口
+ServerSocket ss = new ServerSocket(9999);
+Socket s = ss.accept ();
+InputStream in = s.getInputStream();
+byte[] buf = new byte[1024];
+int num = in.read(buf);
+String str = new String(buf,0,num);
+System.out.println(s.getInetAddress().toString()+”:”+str);
+s.close();
+ss.close();
+```
+
+## UDP协议
+
+UDP协议是一种不可靠的网络协议，它在通信实例的两端各建立一个Socket，但这两个Socket之间并没有虚拟链路，这两个Socket只是发送、接收数据报的对象，Java提供了DatagramSocket对象作为基于UDP协议的Socket，使用DatagramPacket代表DatagramSocket发送、接收的数据报。
+
+### 发送端
+
+```java
+在发送端，要在数据包对象中明确目的地IP及端口。
+DatagramSocket ds = new DatagramSocket();
+byte[] by = “hello,udp”.getBytes();
+DatagramPacket dp = new DatagramPacket(by,0,by.length,
+			InetAddress.getByName(“127.0.0.1”),10000);
+ds.send(dp);
+ds.close();
+```
+
+### 接收端
+
+```java
+在接收端，要指定监听的端口。
+DatagramSocket ds = new DatagramSocket(10000);
+byte[] by = new byte[1024];
+DatagramPacket dp = new DatagramPacket(by,by.length);
+ds.receive(dp);
+String str = new String(dp.getData() );
+System.out.println(str+"--"+dp.getAddress());
+ds.close();
+```
+
+### MulticastSocket与多点广播
+
+`DatagramSocket`只允许数据报发送给指定的目标地址，而`MulticastSocket`可以将数据报以广播方式发送到数量不等的多个客户端。
+
+•若要使用多点广播时，则需要让一个数据报标有一组目标主机地址，当数据报发出后，整个组的所有主机都能收到该数据报。IP多点广播（或多点发送）实现了将单一信息发送到多个接收者的广播，其思想是设置一组特殊网络地址作为多点广播地址，每一个多点广播地址都被看作一个组，当客户端需要发送、接收广播信息时，加入到该组即可。
+
+```java
+package udp通讯.MultiSocket广播;
+
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+
+/**
+ * 不需要服务端
+ */
+public class MultiSocketClient {
+    private static final String MULTISOCKET_SERVICE_IP = "230.0.0.1";  // 广播IP
+    private static final int MULTISOCKET_SERVICE_PORT = 35000; // 广播端口
+
+
+    public static void main(String[] args) throws IOException {
+        MulticastSocket multicastSocket = new MulticastSocket(MULTISOCKET_SERVICE_PORT); // 使用本机默认的IP
+        multicastSocket.setTimeToLive(64); // 控制数据包只广播到本地区
+        InetAddress inetAddress = InetAddress.getByName(MULTISOCKET_SERVICE_IP);  // 将IP转换为InetAddress
+        multicastSocket.joinGroup(inetAddress); // 加入广播地址
+        // 开启子线程
+        new MultiSocketClientThread(multicastSocket).start();
+
+        // 获取系统输入System.in，包装为输入流BufferedReader
+        BufferedReader bf = new BufferedReader(new InputStreamReader(System.in));
+        String message = null;
+        while ((message = bf.readLine()) != null) {
+            // 数据装换为字节数组
+            byte[] buf = message.getBytes();
+            // 创建data集装箱
+            DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length, inetAddress, MULTISOCKET_SERVICE_PORT);
+            // 发送集装箱
+            multicastSocket.send(datagramPacket);
+
+
+        }
+    }
+}
+
+
+/**
+ * 广播客户端子线程，负责打捞数据包
+ */
+class MultiSocketClientThread extends Thread {
+    private MulticastSocket multicastSocket;
+
+    public MultiSocketClientThread(MulticastSocket multicastSocket){
+        this.multicastSocket = multicastSocket;
+    }
+
+    @Override
+    public void run(){
+        // 定义一个空的集装箱，用于接受数据
+        byte[] buf = new byte[4096];
+        DatagramPacket packet = new DatagramPacket(buf, buf.length);
+        // 循环收集数据包
+        while (true){
+            try {
+                multicastSocket.receive(packet);
+                System.out.println("得到字节数组：" + new String(packet.getData(), "utf-8"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+```
+
+
+
+## UDP和TCP协议的区别
+
+TCP协议：可靠，传输大小无限制，但是需要连接建立时间，差错控制开销大。
+
+UDP协议：不可靠，差错控制开销较小，传输大小限制在64K以下，不需要建立连接
+
+## 代理服务器
+
+Proxy有如下一个构造器：Proxy(Proxy.Type type, SocketAddress sa)：创建表示代理服务器的Proxy对象。而sa参数指定代理服务器的地址，其中type是该代理服务器的类型，该服务器类型有如下三种：
+
+- –Proxy.Type.DIRECT：表示直接连接或代理不存在。
+- –Proxy.Type.HTTP：表示高级协议的代理，如 HTTP 或 FTP。 
+- –Proxy.Type.SOCKS：表示 SOCKS（V4 或 V5）代理。
+
+•一旦创建了Proxy对象之后，程序就可以在使用URLConnection打开连接时，或创建Socket连接时传入一个Proxy对象，作为本次连接所使用的代理服务器。
+
+•其中URL包含了一个URLConnection openConnection(Proxy proxy)方法，该方法使用指定的代理服务器来打开连接；而Socket则提供了一个Socket(Proxy proxy)构造器，该构造器使用指定的代理服务器创建一个没有连接的Socket对象。
+
+### **使用**ProxySelector
+
+•ProxySelector可以它根据不同的连接使用不同的代理服务器。
+
+•系统默认的ProxySelector会检测各种系统属性和URL协议，然后决定怎样连接不同的主机。当然，程序也可以调用ProxySelector类的setDefault()静态方法来设置默认代理服务器，也可以调用getDefault()方法获得系统当前默认的代理服务器。
+
+•程序可以通过System类来设置系统的代理服务器属性，关于代理服务器常用的属性名有如下三个：
+
+–http.proxyHost：设置HTTP访问所使用的代理服务器地址。该属性名的前缀可以改为https、ftp等，分别用于设置HTTP访问、安全HTTP访问和FTP访问所用的代理服务器地址。
+
+–http.proxyPort：设置HTTP访问所使用的代理服务器端口。该属性名的前缀可以改为https、ftp等，分别用于设置HTTP访问、安全HTTP访问和FTP访问所用的代理服务器端口。
+
+–http.nonProxyHosts：设置HTTP访问中不需要使用代理服务器的远程主机，可以使用*通配符，如果有多个地址，多个地址用竖线（|）分隔。
+
+# 泛型
+
+## 泛型的概述
+
+### 泛型由来
+
+* 我们的集合可以存储多种数据类型的元素,那么在存储的时候没有任何问题,但是在获取元素,并向下转型的时候,可能会存在一个错误,而这个错误就是ClassCastException . 很显然,集合的这种可以存储多种数据类型的元素的这个特点,不怎么友好 , 程序存在一些安全隐患,那么为了出来这种安全隐患,我们应该限定一个集合存储元素的数据类型,我们只让他存储统一中数据类型的元素,那么在做向下转型的是就不会存在这种安全隐患了. 怎么限定集合只能给我存储同一种数据类型的元素呢? 需要使用泛型。
+
+
+### 基本概述
+
+* 是一种把类型明确的工作推迟到创建对象或者调用方法的时候才去明确的特殊的类型。参数化类型，把类型当作参数一样的传递。
+* 泛型的出现减少了很多强转的操作，同时避免了很多运行时的错误，在编译期完成检查类型转化
+
+
+### 引入泛型的目的
+
+- 了解引入泛型的动机，就先从语法糖开始了解。
+  - 语法糖（Syntactic Sugar），也称糖衣语法，是由英国计算机学家Peter.J.Landin发明的一个术语，指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被还原回了简单的基础语法结构，这个过程成为解语法糖。
+
+
+### 泛型的目的
+
+- Java 泛型就是把一种语法糖，通过泛型使得在编译阶段完成一些类型转换的工作，避免在运行时强制类型转换而出现`ClassCastException`，即类型转换异常。
+
+
+
+## 泛型初步探索
+
+- JDK 1.5 时才增加了泛型，并在很大程度上都是方便集合的使用，使其能够记住其元素的数据类型。
+
+- 在泛型（Generic type或Generics）出现之前，是这么写代码的：
+
+  ```java
+  public static void main(String[] args){
+      List list = new ArrayList();
+      list.add("123");
+      list.add("456");
+      System.out.println((String)list.get(0));
+  }
+  ```
+
+- 当然这是完全允许的，因为List里面的内容是Object类型的，自然任何对象类型都可以放入、都可以取出，但是这么写会有两个问题：
+
+  - 1、当一个对象放入集合时，集合不会记住此对象的类型，当再次从集合中取出此对象时，该对象的编译类型变成了Object。
+  - 2、运行时需要人为地强制转换类型到具体目标，实际的程序绝不会这么简单，一个不小心就会出现`java.lang.ClassCastException`。
+  - 所以，泛型出现之后，上面的代码就改成了大家都熟知的写法：
+
+  ```java
+  public static void main(String[] args){
+      List<String>
+      list = new ArrayList<String>();
+      list.add("123");
+      list.add("456");
+      System.out.println(list.get(0));
+  }
+  ```
+
+- 这就是泛型。
+
+  - 泛型是对Java语言类型系统的一种扩展，有点类似于C++的模板，可以把类型参数看作是使用参数化类型时指定的类型的一个占位符。引入泛型，是对Java语言一个较大的功能增强，带来了很多的好处。
+
+
+
+## 泛型的格式
+
+* <数据类型>    这里的数据类型只能是引用数据类型
+* <数据类型1 , 数据类型2 , ....>
+
+
+
+
+## 泛型的优势
+
+- ①类型安全。类型错误现在在编译期间就被捕获到了，而不是在运行时当作java.lang.ClassCastException展示出来，将类型检查从运行时挪到编译时有助于开发者更容易找到错误，并提高程序的可靠性。
+- ②消除了代码中许多的强制类型转换，增强了代码的可读性。
+- ③为较大的优化带来了可能。优化了程序设计，解决了黄色警告线。
+
+## 泛型的使用
+
+###  泛型类的概述及使用
+
+* A:泛型类概述:         把泛型定义在类上
+* B:定义格式:           public class 类名<泛型类型1,…>
+* C:注意事项:           泛型类型必须是引用类型
+
+
+
+
+### 泛型方法的概述和使用
+
+* A:泛型方法概述:    把泛型定义在方法上
+
+* B:定义格式:           public <泛型类型> 返回类型 方法名(泛型类型 变量名)
+
+  ```
+  public <T> void show(T t) {
+  
+  }
+  ```
+
+- **所谓泛型方法，就是在声明方法时定义一个或多个类型形参。** 泛型方法的用法格式如下：
+
+  ```
+  修饰符<T, S> 返回值类型 方法名（形参列表）｛
+     方法体
+  ｝
+  ```
+
+- **注意要点：** 
+
+  - 方法声明中定义的形参只能在该方法里使用，而接口、类声明中定义的类型形参则可以在整个接口、类中使用。当调用`fun()`方法时，根据传入的实际对象，编译器就会判断出类型形参T所代表的实际类型。
+
+  ```
+  class Demo{  
+    public <T> T fun(T t){   // 可以接收任意类型的数据  
+     return t ;     // 直接把参数返回  
+    }  
+  };  
+  public class GenericsDemo26{  
+    public static void main(String args[]){  
+      Demo d = new Demo() ; // 实例化Demo对象  
+      String str = d.fun("汤姆") ; // 传递字符串  
+      int i = d.fun(30) ;  // 传递数字，自动装箱  
+      System.out.println(str) ; // 输出内容  
+      System.out.println(i) ;  // 输出内容  
+    }  
+  };
+  ```
+
+
+
+### 泛型接口的概述和使用
+
+- 先来看一个案例
+
+  * A:泛型接口概述:    把泛型定义在接口上
+  * B:定义格式:        public interface 接口名<泛型类型>
+
+  ```
+  /**
+   * 泛型接口的定义格式:        修饰符  interface 接口名<数据类型> {}
+   */
+  public interface Inter<T> {
+      public abstract void show(T t) ;
+  }
+  
+  /**
+   * 子类是泛型类
+   */
+  public class InterImpl<E> implements Inter<E> {
+      @Override
+      public void show(E t) {
+          System.out.println(t);
+      }
+  }
+  
+  
+  Inter<String> inter = new InterImpl<String>() ;
+  inter.show("hello") ;
+  ```
+
+- 然后看看源码中泛型的使用，下面是JDK 1.5 以后，List接口，以及ArrayList类的代码片段。
+
+  ```
+  //定义接口时指定了一个类型形参，该形参名为E
+  public interface List<E> extends Collection<E> {
+     //在该接口里，E可以作为类型使用
+     public E get(int index) {}
+     public void add(E e) {} 
+  }
+  
+  //定义类时指定了一个类型形参，该形参名为E
+  public class ArrayList<E> extends AbstractList<E> implements List<E> {
+     //在该类里，E可以作为类型使用
+     public void set(E e) {
+     .......................
+     }
+  }
+  ```
+
+  - 这就是**泛型的实质：允许在定义接口、类时声明类型形参，类型形参在整个接口、类体内可当成类型使用，几乎所有可使用普通类型的地方都可以使用这种类型形参。**[博客](https://github.com/yangchong211/YCBlogs)
+
+- **泛型类派生子类**
+
+  - 当创建了带泛型声明的接口、父类之后，可以为该接口创建实现类，或者从该父类派生子类，需要注意：**使用这些接口、父类派生子类时不能再包含类型形参，需要传入具体的类型。**  
+
+  - 错误的方式：
+
+    ```
+    public class A extends Container<K, V>{}
+    ```
+
+  - 正确的方式：
+
+    ```
+    public class A extends Container<Integer, String>{}
+    ```
+
+  - 也可以不指定具体的类型，此时系统会把K,V形参当成Object类型处理。如下：
+
+    ```
+    public class A extends Container{}
+    ```
+
+
+
+
+### 泛型类的概述和使用
+
+- 定义一个容器类，存放键值对key-value，键值对的类型不确定，可以使用泛型来定义，分别指定为K和V。
+
+  ```
+  public class Container<K, V> {
+  
+      private K key;
+      private V value;
+  
+      public Container(K k, V v) {
+          key = k;
+          value = v;
+      }
+  
+      public K getkey() {
+          return key;
+      }
+  
+      public V getValue() {
+          return value;
+      }
+  
+      public void setKey() {
+          this.key = key;
+      }
+  
+      public void setValue() {
+          this.value = value;
+      }
+  
+  }
+  ```
+
+- 在使用Container类时，只需要指定K，V的具体类型即可，从而创建出逻辑上不同的Container实例，用来存放不同的数据类型。
+
+  ```
+  public static void main(String[] args) {
+      Container<String,String>  c1=new Container<String ,String>("name","hello");
+      Container<String,Integer> c2=new Container<String,Integer>("age",22);
+      Container<Double,Double>  c3=new Container<Double,Double>(1.1,1.3);
+      System.out.println(c1.getKey() + " : " + c1.getValue());      
+      System.out.println(c2.getKey() + " : " + c2.getValue());                                                               
+      System.out.println(c3.getKey() + " : " + c3.getValue());
+  }
+  ```
+
+- 在JDK 1.7 增加了泛型的“菱形”语法：**Java允许在构造器后不需要带完成的泛型信息，只要给出一对尖括号（&lt;&gt;）即可，Java可以推断尖括号里应该是什么泛型信息。**  [博客](https://github.com/yangchong211/YCBlogs)
+  如下所示：
+
+    ```
+  Container<String,String> c1=new Container<>("name","hello");
+  Container<String,Integer> c2=new Container<>("age",22);
+    ```
+
+
+
+### 泛型构造器的概述
+
+- 正如泛型方法允许在方法签名中声明类型形参一样，Java也允许在构造器签名中声明类型形参，这样就产生了所谓的泛型构造器。
+
+- 和使用普通泛型方法一样没区别，一种是显式指定泛型参数，另一种是隐式推断，如果是显式指定则以显式指定的类型参数为准，如果传入的参数的类型和指定的类型实参不符，将会编译报错。
+
+  ```
+  public class Person {
+      public <T> Person(T t) {
+          System.out.println(t);
+      }
+  }
+  ```
+
+- 如何使用
+
+  ```
+  public static void main(String[] args){
+      //隐式
+      new Person(22);
+      //显示
+      new<String> Person("hello");
+  }
+  ```
+
+- 这里唯一需要特殊注明的就是，
+
+  - 如果构造器是泛型构造器，同时该类也是一个泛型类的情况下应该如何使用泛型构造器：因为泛型构造器可以显式指定自己的类型参数（需要用到菱形，放在构造器之前），而泛型类自己的类型实参也需要指定（菱形放在构造器之后），这就同时出现了两个菱形了，这就会有一些小问题，具体用法再这里总结一下。  
+    以下面这个例子为代表
+
+  ```
+  public class Person<E> {
+      public <T> Person(T t) {
+          System.out.println(t);
+      }
+  }
+  ```
+
+  - 这种用法：`Person<String> a = new <Integer>Person<>(15);`这种语法不允许，会直接编译报错！
+
+
+
+### 泛型高级之通配符
+
+#### 为什么要使用通配符
+
+* 通配符的设计存在一定的场景，例如在使用泛型后，首先声明了一个Animal的类，而后声明了一个继承Animal类的Cat类，显然Cat类是Animal类的子类，但是List<Cat>却不是List<Animal>的子类型，而在程序中往往需要表达这样的逻辑关系。为了解决这种类似的场景，在泛型的参数类型的基础上新增了通配符的用法。
+
+
+
+#### <? extends T> 上界通配符
+
+- 上界通配符顾名思义，<? extends T>表示的是类型的上界【**包含自身**】，因此通配的参数化类型可能是T或T的子类。
+
+  - 正因为无法确定具体的类型是什么，add方法受限（可以添加null，因为null表示任何类型），但可以从列表中获取元素后赋值给父类型。如上图中的第一个例子，第三个add()操作会受限，原因在于List<Animal>和List<Cat>是List<? extends Animal>的子类型。
+
+  ```
+  它表示集合中的所有元素都是Animal类型或者其子类
+  List<? extends Animal>
+  ```
+
+- 这就是所谓的上限通配符，使用关键字extends来实现，实例化时，指定类型实参只能是extends后类型的子类或其本身。 
+
+  - 例如：
+  - 这样就确定集合中元素的类型，虽然不确定具体的类型，但最起码知道其父类。然后进行其他操作。
+
+  ```java
+  //Cat是其子类
+  List<? extends Animal> list = new ArrayList<Cat>();
+  ```
+  
+- 只能调用返回值为泛型的方法，不能调用参数为泛型的方法
+
+- 调用返回值为泛型的方法，该方法的返回值总是当做泛型的上限处理
+
+
+
+#### <? super T> 下界通配符
+
+- 下界通配符<? super T>表示的是参数化类型是T的超类型（**包含自身**），层层至上，直至Object
+
+  - 编译器无从判断get()返回的对象的类型是什么，因此get()方法受限。但是可以进行add()方法，add()方法可以添加T类型和T类型的子类型，如第二个例子中首先添加了一个Cat类型对象，然后添加了两个Cat子类类型的对象，这种方法是可行的，但是如果添加一个Animal类型的对象，显然将继承的关系弄反了，是不可行的。
+
+  ```java
+  它表示集合中的所有元素都是Cat类型或者其父类
+  List <? super Cat>
+  ```
+
+- 这就是所谓的下限通配符，使用关键字super来实现，实例化时，指定类型实参只能是extends后类型的子类或其本身。  
+
+  - 例如：
+
+  ```java
+  //Shape是其父类
+  List<? super Cat> list = new ArrayList<Animal>();
+  ```
+  
+- 只能调用参数为泛型的方法，不能调用返回值为泛型的方法
+
+- 调用调用参数为泛型的方法，该方法的参数总是当做类型的下限处理
+
+
+#### <?> 无界通配符
+
+* 任意类型，如果没有明确，那么就是Object以及任意的Java类了
+* 无界通配符用<?>表示，?代表了任何的一种类型，能代表任何一种类型的只有null（Object本身也算是一种类型，但却不能代表任何一种类型，所以List<Object>和List<null>的含义是不同的，前者类型是Object，也就是继承树的最上层，而后者的类型完全是未知的）。
+
+
+
+
+## 泛型只能使用引用类型
+
+- 当声明泛型类的实例时，传递的类型参数必须是引用类型，不能使用基本类型
+
+  - 例如，对于 User 泛型类来说，以下声明是非法的
+
+  ```
+  User<int,double> user=new User<>(1,10,0);
+  ```
+
+- IDE 会提示类型参数不能是基本数据类型
+
+  - ![image](http://upload-images.jianshu.io/upload_images/2552605-daf7e4beac1467e6?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+- 如何解决
+
+  - 可以使用类型的包装类来解决该问题
+
+
+
+## 泛型擦除
+
+- 就是指编译器编译带类型说明的集合时会去掉“类型”信息
+
+### 泛型擦除案例
+
+- 泛型是提供给javac编译器使用的，限定集合的输入类型，编译器编译带类型说明的集合时会去掉“类型”信息。
+
+  ```java
+  public class GenericTest {
+      public static void main(String[] args) {
+          new GenericTest().testType();
+      }
+  
+      public void testType(){
+          ArrayList<Integer> collection1 = new ArrayList<Integer>();
+          ArrayList<String> collection2= new ArrayList<String>();
+          
+          System.out.println(collection1.getClass()==collection2.getClass());
+          //两者class类型一样,即字节码一致
+          
+          System.out.println(collection2.getClass().getName());
+          //class均为java.util.ArrayList,并无实际类型参数信息
+      }
+  }
+  ```
+
+- 输出
+
+  ```java
+  true
+  java.util.ArrayList
+  ```
+
+- 为何会返回true
+
+  - 这是因为不管为泛型的类型形参传入哪一种类型实参，对于Java来说，它们依然被当成同一类处理，在内存中也只占用一块内存空间。从Java泛型这一概念提出的目的来看，其只是作用于代码编译阶段，在编译过程中，对于正确检验泛型结果后，会将泛型的相关信息擦出，也就是说，成功编译过后的class文件中是不包含任何泛型信息的。泛型信息不会进入到运行时阶段。[博客](https://github.com/yangchong211/YCBlogs)
+  - **在静态方法、静态初始化块或者静态变量的声明和初始化中不允许使用类型形参。由于系统中并不会真正生成泛型类，所以instanceof运算符后不能使用泛型类。**
+
+- 使用反射可跳过编译器，往某个泛型集合加入其它类型数据。
+
+  - 只有引用类型才能作为泛型方法的实际参数
+  - 例子：
+
+  ```java
+  public class GenericTest {
+      public static void main(String[] args) {
+          swap(new String[]{"111","222"},0,1);//编译通过
+          
+          //swap(new int[]{1,2},0,1);
+          //编译不通过,因为int不是引用类型
+          
+          swap(new Integer[]{1,2},0,1);//编译通过
+      }
+      
+      /*交换数组a 的第i个和第j个元素*/
+      public static <T> void swap(T[]a,int i,int j){
+          T temp = a[i];
+          a[i] = a[j];
+          a[j] = temp;
+      }
+  }
+  ```
+
+- 但注意基本类型**有时**可以作为实参，因为有**自动装箱**和**拆箱**。
+
+  - 例子(编译通过了)：
+
+  ```java
+  public class GenericTest {
+      public static void main(String[] args) {
+          new GenericTest().testType();
+          int a = biggerOne(3,5);
+          //int 和 double,取交为Number
+          Number b = biggerOne(3,5.5);
+          //String和int 取交为Object
+          Object c = biggerOne("1",2);
+      }
+      //从x,y中返回y
+      public static <T> T biggerOne(T x,T y){
+          return y;
+      }
+  }
+  ```
+
+  - 同时，该例还表明，**当实参不一致时，T取交集，即第一个共同的父类。**
+  - 另外，如果用`Number b = biggerOne(3,5.5);`改为`String c = biggerOne(3,5.5);`则编译报错:
+
+  ```java
+  Error:(17, 29) java: 不兼容的类型: 推断类型不符合上限
+      推断: java.lang.Number&java.lang.Comparable<? extends java.lang.Number&java.lang.Comparable<?>>
+      上限: java.lang.String,java.lang.Object
+  ```
+
+## 通过反射获得泛型的实际类型参数
+
+- 把泛型变量当成方法的参数，利用`Method`类的`getGenericParameterTypes`方法来获取泛型的实际类型参数
+
+- 例子：
+
+  ```java
+  public class GenericTest {
+  
+      public static void main(String[] args) throws Exception {
+          getParamType();
+      }
+      
+       /*利用反射获取方法参数的实际参数类型*/
+      public static void getParamType() throws NoSuchMethodException{
+          Method method = GenericTest.class.getMethod("applyMap",Map.class);
+          //获取方法的泛型参数的类型
+          Type[] types = method.getGenericParameterTypes();
+          System.out.println(types[0]);
+          //参数化的类型
+          ParameterizedType pType  = (ParameterizedType)types[0];
+          //原始类型
+          System.out.println(pType.getRawType());
+          //实际类型参数
+          System.out.println(pType.getActualTypeArguments()[0]);
+          System.out.println(pType.getActualTypeArguments()[1]);
+      }
+  
+      /*供测试参数类型的方法*/
+      public static void applyMap(Map<Integer,String> map){
+  
+      }
+  }
+  ```
+
+- 输出结果：
+
+  ```java
+  java.util.Map<java.lang.Integer, java.lang.String>
+  interface java.util.Map
+  class java.lang.Integer
+  class java.lang.String
+  ```
+
+## 泛型的限制
+
+### 模糊性错误
+
+- 对泛型类 User< T, K > 而言，声明了两个泛型类参数：T 和 K。在类中试图根据类型参数的不同重载 set() 方法。这看起来没什么问题，可编译器会报错
+
+  ```
+  public class User<T, K> {
+      
+      //重载错误
+      public void set(T t) {
+          
+      }
+  
+  	//重载错误
+      public void set(K k) {
+  
+      }
+  }
+  ```
+
+- 首先，当声明 User 对象时，T 和 K 实际上不需要一定是不同的类型，以下的两种写法都是正确的
+
+  ```
+  public class GenericMain {
+      public static void main(String[] args) {
+          User<String, Integer> stringIntegerUser = new User<>();
+          User<String, String> stringStringUser = new User<>();
+      }
+  }
+  ```
+
+  - 对于第二种情况，T 和 K 都将被 String 替换，这使得 set() 方法的两个版本完全相同，所以会导致重载失败。
+
+- 此外，对 set() 方法的类型擦除会使两个版本都变为如下形式：[博客](https://github.com/yangchong211/YCBlogs)
+
+  - 一样会导致重载失败
+
+  ```
+  public void set(Object o) {
+      
+  }
+  ```
+
+
+
+
+### 不能实例化类型参数
+
+- 不能创建类型参数的实例。因为编译器不知道创建哪种类型的对象，T 只是一个占位符
+
+  ```
+  public class User<T> {
+  
+      private T t;
+  
+      public User() {
+          //错误
+          t = new T();
+      }
+  }
+  ```
+
+
+
+### 对静态成员的限制
+
+- 静态成员不能使用在类中声明的类型参数，但是可以声明静态的泛型方法
+
+  ```
+  public class User<T> {
+  
+      //错误
+      private static T t;
+  
+      //错误
+      public static T getT() {
+          return t;
+      }
+  
+      //正确
+      public static <K> void test(K k) {
+  
+      }
+  }
+  ```
+
+
+
+### 对泛型数组的限制
+
+- 不能实例化元素类型为类型参数的数组，但是可以将数组指向类型兼容的数组的引用
+
+  ```
+  public class User<T> {
+  
+      private T[] values;
+  
+      public User(T[] values) {
+          //错误，不能实例化元素类型为类型参数的数组
+          this.values = new T[5];
+          //正确，可以将values 指向类型兼容的数组的引用
+          this.values = values;
+      }
+  }
+  ```
+
+- 此外，不能创建特定类型的泛型引用数组，但使用通配符的话可以创建指向泛型类型的引用的数组
+
+  ```
+  public class User<T> {
+  
+      private T[] values;
+  
+      public User(T[] values) {
+          this.values = values;
+      }
+  }
+  
+  
+  public class GenericMain {
+  
+      public static void main(String[] args) {
+          //错误，不能创建特定类型的泛型引用数组
+          User<String>[] stringUsers = new User<>[10];
+          //正确，使用通配符的话，可以创建指向泛型类型的引用的数组
+          User<?>[] users = new User<?>[10];
+      }
+  }
+  ```
+
+
+
+### 对泛型异常的限制
+
+- 泛型类不能扩展 Throwable，意味着不能创建泛型异常类
+
+## 泛型的注意点
+
+A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
 
