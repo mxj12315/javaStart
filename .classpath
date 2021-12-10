@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="day01-code/src"/>
+	<classpathentry kind="src" path="day02-code/src"/>
+	<classpathentry kind="src" path="day03-code/src"/>
+	<classpathentry kind="src" path="day04-code/src"/>
+	<classpathentry kind="src" path="day05-code/src"/>
+	<classpathentry kind="src" path="day06-code/src"/>
+	<classpathentry kind="src" path="day07-code/src"/>
+	<classpathentry kind="src" path="day08-code/src"/>
+	<classpathentry kind="src" path="day09-code/src"/>
+	<classpathentry kind="src" path="day10-code/src"/>
+	<classpathentry kind="src" path="day11-code/src"/>
+	<classpathentry kind="src" path="day12-code/src"/>
+	<classpathentry kind="src" path="day13-code/src"/>
+	<classpathentry kind="src" path="day14-code/src"/>
+	<classpathentry kind="src" path="day15-code/src"/>
+	<classpathentry kind="src" path="day16-code/src"/>
+	<classpathentry kind="src" path="day17-code/src"/>
+	<classpathentry kind="lib" path="out/artifacts/aaaa/aaaa.jar"/>
+	<classpathentry kind="lib" path="out/artifacts/day13_code_jar/day13code.jar"/>
+	<classpathentry kind="lib" path="out/artifacts/day13/day13-code_jar.jar"/>
+	<classpathentry kind="lib" path="out/artifacts/javaStart_jar/javaStart_jar.jar"/>
+	<classpathentry kind="output" path="out/production/day01-code"/>
+</classpath>
