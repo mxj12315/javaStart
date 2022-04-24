@@ -71,6 +71,83 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 ### CLASSPATH
 告诉jre去哪里找class文件，如果不配置，默认去当前目录中查找
 
+### kali linux中配置java环境
+
+```
+dpkg -i jdk-11.0.13_linux-x64_bin.deb
+
+安装目录
+/usr/lib/jvm/jdk-11/bin
+
+修改环境变量
+vim /etc/profile
+
+
+profile文件信息
+# /etc/profile: system-wide .profile file for the Bourne shell (sh(1))
+# and Bourne compatible shells (bash(1), ksh(1), ash(1), ...).
+
+if [ "$(id -u)" -eq 0 ]; then
+  PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+else
+  PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+fi
+export PATH
+
+if [ "${PS1-}" ]; then
+  if [ "${BASH-}" ] && [ "$BASH" != "/bin/sh" ]; then
+    # The file bash.bashrc already sets the default PS1.
+    # PS1='\h:\w\$ '
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+  else
+    if [ "$(id -u)" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
+
+if [ -d /etc/profile.d ]; then
+  for i in /etc/profile.d/*.sh; do
+    if [ -r $i ]; then
+      . $i
+    fi
+  done
+  unset i
+fi
+
+
+// java的环境变量
+# java11 path
+export JAVA_HOME=/usr/lib/jvm/jdk-11
+# tomcat path
+export TOMCAT_HOME=/bin/apache-tomcat-8.5.73/bin
+
+# 多个变量用冒号隔开
+export PATH=${JAVA_HOME}/bin:${PATH}:${TOMCAT_HOME}
+
+// 执行  source命令通常用于重新执行刚修改的初始化文件，使之立即生效，而不必注销并重新登录。
+# source profile   
+
+验证是否安装成功
+# java -version 
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+java version "11.0.13" 2021-10-19 LTS
+Java(TM) SE Runtime Environment 18.9 (build 11.0.13+10-LTS-370)
+Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.13+10-LTS-370, mixed mode)
+
+
+
+# javac -version
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on -Dswing.aatext=true
+javac 11.0.13
+
+
+```
+
 
 
 
@@ -796,6 +873,8 @@ public class  ClassName{
 > 面向对象设计：OOD
 >
 > 面向对象编程：OOP
+>
+> 面向切面编程：AOP
 
 ## 类Class
 
@@ -862,7 +941,7 @@ public class  ClassName{
 
 static 是一个特殊的关键字,译为”静态”,所有有static 修饰的叫类属性,类方法,类成员
 
-形式参数：如果在定义方法时,在最后一个参数的类型后增加三点`…`，则表明该形参接受多个参数值,多个参数值被当成数组传入；长度可变的形参只能位于最后一个参数，并一个方法里只能有一个可变长度的参数。
+形式参数：如果在定义方法时,在最后一个参数的类型后增加三点`…`，则表明该形参接受多个参数值,多个参数值被当成数组传入；长度可变的形参只能位于最后一个参数，并一个方法里只能有一个可变长度的参数，可变参数是数组`[]`。
 
 #### 返回值类型
 
@@ -1129,7 +1208,8 @@ public class User {
 super();
 super(参数); // 调用某一个有参数的构造方法
 // or
-super.
+super.method();  //  父类的方法
+super.Field // 父类的字段
 ```
 
 例子
@@ -1286,14 +1366,14 @@ B继承A类：
 >
 > 其他数据都可以继承
 
-### 重写override
+### <span id="jump">重写override</span>
 
 父类的方法无法满足子类需要重写，子类在调用重写方法时调用重写后的方法
 重写的口诀
 
 - 2同：方法名相同，参数列表相同
 - 2小：返回值类型相同或更小，声明抛出的异常相同或更小
-- 1大：访问权限相同或更大
+- 1大：访问权限相同或更大·
 
 
 
@@ -1315,7 +1395,7 @@ B继承A类：
 子类构造器一定调用父类的构造器一次，有且仅有一次
 父类如果写了带参数的构造器，那么必须写上无参数构造器
 
-- 子类没有显示的调用父类的构造器，系统会默认调用父类的无参数构造器
+- 子类没有显示的调用父类的构造器，**系统会默认调用父类的无参数构造器**
 - 子类构造器第一行显示的使用super调用父类的构造器
 
 super调用一定是调用父类的构造器
@@ -1434,14 +1514,16 @@ import com.minsusu.面向对象07.继承.B;
 
 public class Test {
     public static void main(String[] args) {
-        // 过去的写法
+        // 没有使用多态
         Cat c  = new Cat();
         c.go();       // 猫在睡觉
         c.arrest();   // 猫抓老鼠
 
         Brid b = new Brid();
         b.go();  // 鸟会飞
-
+		
+        
+        //  使用多态
         Animal a = new Animal();
         a.go(); // 动物在跑
         System.out.println("***************************");
@@ -1518,13 +1600,13 @@ public class Test {
 ### 类初始化块
 作用：负责对类执行初始化
 何时执行：当程序第一次主动使用该类时，系统会为该类分配内存空间、并执行初始化，调用类的初始化块
-执行次数：只执行一次
-
+执行次数：**只执行一次**
 
 在类变量定义时指定的初始值，是“假象”
 指定的类初始值，编译之后会被还原到类初始化代码块中的一条赋值语句；
 类初始化代码块和初始化类变量谁在前谁在后？
 顺序以源代码中的顺序相同
+
 ```java
 public class StaticInitTest {
     // 类初始化变量1
@@ -1570,13 +1652,12 @@ public class StaticInitTest {
 何时执行：只要程序调用构造器创建对象时，程序都会执行初始化代码块中的代码
 执行次数：调用构造器时 
 
-
 定义的实例变量指定的初始值，是“假象”
 编译后将会还原到所有构造器代码之前
 
-
 实例代码块和初始化实例变量谁在前谁在后？
-由源代码中的顺序决定
+**由源代码中的顺序决定**
+
 ```java
 public class InitTest {
     // 定义实例变量,编译时会还原到构造器中的一条赋值语句
@@ -1612,6 +1693,7 @@ public class InitTest {
     public InitTest(){
         // 还原部分start
         age1 = 30;
+        // 实力初始化块中的内容
         System.out.println("实例初始化块");
         age = 5 ;
         age1 = 10 ;
@@ -1661,14 +1743,13 @@ int  char long byte double float  boolean short
 ### 自动拆箱
 包装类的实例可以当做基本类型的值使用
 
-
 建议
-做项目时候，通常使用包装类来申明变量，因为包装类可以当做基本数据类型使用，并且可以复赋值为null
+做项目时候，**通常使用包装类来申明变量，因为包装类可以当做基本数据类型使用，并且可以复赋值为null**
 
 
 #### 包装类.parseXxx()
-不同包装类之间的转换，包装类.parseXxx()
-java.lang.NumberFormatException:要转换的数字不合法，出现异常数字格式异常
+不同包装类之间的转换，`包装类.parseXxx()`
+`java.lang.NumberFormatException`:要转换的数字不合法，出现异常数字格式异常
 
 
 #### 包装类型缓冲
@@ -1699,6 +1780,7 @@ public class PackageingBuffer {
 程序打印对象，或者把对象转换为字符串时，实际上用的是该对象的toString方法
 如果类本身没有toString方法，则会调用父类的toString方法
 Object类所提供的toSting方法返回：`类名@hashCode返回值`
+
 ```java
 /**
 * Apple类
@@ -1824,13 +1906,10 @@ public class EqualsOverride {
 - static修饰的是类变量，没有static修饰的是成员变量
 - 局部变量不属于类成员，不能使用static修饰
 - static不能修饰外部类，外部类不属于任何类
-- static可以修饰成员：成员变量、放过、初始化块、内部类
+- static可以修饰成员：成员变量、方法、初始化块、内部类
 - static修饰构造器无任何意义，因为构造器属于实例使用
 - static方法属于类方法，不能调用实例方法
-
-
-
-
+- 虽然实例可以通过`.类方法或者.类字段`来访问，但是不建议这样使用，类方法或者类字段应该由`className.Field/className.method()`来调用
 
 ### 单例模式
 永远创建出的实例都是同一个
@@ -1875,11 +1954,12 @@ public class InstanceMain {
 可以修饰任何变量、方法、类
 final与abstract互斥，不能同时出现
 ### final修饰的变量
-final修饰的变量被赋值后，不能重新再赋值
-final修饰的变量必须赋值，且只能赋值一次
+final修饰的变量被赋值后，**不能重新再赋值**
+
+final修饰的变量必须赋值，且**只能赋值一次**
 
 - 非final修饰的变量，可以不指定初始值，系统默认分配
-- final修饰的成员变量，必须显示指定初始值
+- final修饰的成员变量，必须**显示指定初始值**
 ### final修饰的**成员变量**
  final修饰的**成员变量**可以存在的三个位置，本质都是在构造器中：
 
@@ -1897,7 +1977,7 @@ final修饰的变量必须赋值，且只能赋值一次
 
 
 
-### final修饰的局部**变量**
+### final修饰的局部变量
  final修饰的**局部变量，**基本数据类型和引用类型，不能被重新赋值：
 
 - 定义时指定初始值或者不指定初始值，但是使用时必须指定初始值
@@ -2018,16 +2098,16 @@ public class HongTest1 {
 }
 ```
 ### final修饰的方法
-修饰的方法不允许被子类重写；
-final修饰的方法可以被重载，也可以被子类调用
+修饰的**方法不允许被子类重写**；
+final修饰的方法**可以被重载**，也可以被子类调用
 【备注】private修饰的方法已经隐藏到该类的内部，子类无法访问，因此无法重写
-final修饰private的方法是多余的！
+final修饰private的方法是多余的！（private修饰的方法本身访问权限只在本类中，不对外界暴露）
 
 
 ### final修饰的类
 final修饰的类不能被继承
 jdk中有的final修饰的类，比如String、math、System类
-Object一定不是final修饰的！
+Object一定不是final修饰的！（因为它一定要被其他类继承）
 
 
 ## abstract修饰符
@@ -2053,7 +2133,7 @@ public abstract ClassName {
 }
 ```
 ### 抽象方法
-只有方法签名，没有方法体
+只有方法签名，没有方法体，需要被子类实现
 ```java
 public abstract void move();  // 抽象方法
 ```
@@ -2105,7 +2185,8 @@ public class AbstractT1 {
 
 ```
 ### 抽象类派生的子类
-子类要么重写父类的所有抽象方法，要么子类也是抽象类
+要求：**子类要么重写父类的所有抽象方法，要么子类也是抽象类**
+
 ```java
 package min.AbstractTest1;
 
@@ -2168,7 +2249,7 @@ public class AbstractT4 {
 
 - 接口相当于是一种彻底抽象的类，支持多继承
 - 接口体现的是一种规范，要暴露出来供大家遵守的规范
-- 写或不写都有public修饰，一般都省略不写
+- **写或不写都有public修饰**，一般都省略不写，因为要给子类实现重写方法
 ### 语法
 ```java
 [修饰符] interface 接口名 extends 父接口1，父接口2，…… {
@@ -2186,10 +2267,10 @@ public class AbstractT4 {
 package min.jiekou;
 
 public interface Jk {
-    // 系统会默认添加上普public static final
+    // 系统会默认添加上public static final
     int AGE = 18;
 
-    // 抽象方法，系统会默认添加上普public abstract
+    // 抽象方法，系统会默认添加上public abstract
     void test();
 
     // java8之后可以有main方法
@@ -2227,7 +2308,7 @@ public interface Jk {
 推论：
 
 - 子类要么重写接口中所有的抽象方法，要么子类也只能是抽象的
-- 重写接口中的方法只能用public修饰
+- 重写接口中的方法只能用public修饰[参看重写@Override](#jump)
 ```java
 package min.jiekou2;
 
@@ -2286,7 +2367,7 @@ public class Dog implements Eatable, Moveable{
 由于接口中的default方法属于实例方法，多个实例方法很有可能出现“公共方法”，这个“公共方法”就应该抽取到公共的工具方法中，而公共方法又需要对外部隐藏起来，使用private修饰
 
 接口private方法的本质，工具方法。为接口中多个default方法（实例方法）提供的支持
-功能：如果在接口中定义了private方法，那么接口中必然有一个default方法，否则失去意义
+功能：如果在接口中定义了private方法，那么接口中必然有一个default方法，否则失去意义(本身存在就是给default方法中调用的)
 
 ```java
 package min.jiekou4;
@@ -2350,7 +2431,14 @@ public class JKImplement implements JKTest{
 }
 
 ```
+### Java 接口中的default方法
+
+1. 当一个接口添加新方法时，需要所有的实现类都重写新方法，影响到了已有的实现类，可能导致应用崩溃
+
+2. 默认方法可以不强制重写，也不会影响到已有的实现类
+
 ## 内部类（寄生类）
+
 在类内部定义的类，称为内部类，包含内部类的类称为外部类（宿主类）
 ### 内部类与顶级类区别
 
@@ -6132,6 +6220,21 @@ A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
 
 # 注解Annotation
 
+注解的定义语法
+
+```java
+修饰符 @interface 注解名{
+	// 只能有成员变量
+   变量类型 变量名();
+}
+```
+
+注解只是添加在java源程序上，注解本身并不会对程序产生影响，它只是用于提供额外的信息，他需要额外的注解处理工具（APT）来读取注解的信息，并对注解做进一步的处理。
+
+## 元注解
+
+修饰注解的注解
+
 ## @Retention
 
 - @Retention(RetentionPolicy.SOURCE)
@@ -6143,6 +6246,8 @@ A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
 
 
 ## @Target(ElementType.TYPE)
+
+- 修饰注解的注解，修饰注解能在那些程序单元使用
 
 - 表示该注解用来修饰哪些元素。并可以修饰多个
 
@@ -6183,6 +6288,34 @@ A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
     	//...
     }
     ```
+
+## @superesswarnings
+
+去除java代码警告
+
+## @Documented
+
+被修饰的注解将会提取到api文档中
+
+```java
+@interface Bar {
+    String name() default "";
+    int value();
+}
+
+class Test {
+    @Bar(35)  // 当指定value一个变量时候可以省略，相当于@Bar(value=35)
+    public void t(){
+        
+    }
+}
+
+
+提取到api文档中
+@Bar t();
+```
+
+
 
 ## 注解的默认值
 
@@ -6255,4 +6388,41 @@ A是B的子类，A[]是B[]的子类，但类<A>不是类<B>的子类
 ### Annotation里面的方法参数有哪些
 
 - 参数只能使用基本类型byte,short,char,int,long,float,double,boolean八种基本数据类型和 String,Enum,Class,annotations等数据类型,以及这一些类型的数组.例如,String value();这里的参数类型就为String;　
+
+# 类加载器
+
+## JVM虚拟机何时退出
+
+1. System.exit(0)或者RunTime.getRuntime().exit(0)
+2. java程序执行完成
+3. 程序遇到不捕捉的异常或者错误
+4. 平台OS强制结束JVM进程
+
+## 类加载的来源
+
+1. 从本地磁盘的class文件中加载，根据该class文件创建class对象
+2. java支持从jar包中的class文件中，根据class文件创建class对象
+3. 通过网络来加载，`URLClassLoader`类
+4. 通过内存来加载，类的二进制文件直接在内存中生产的
+
+## 类加载器的种类
+
+1. 根加载器（C语言编写的）
+2. 扩展类加载器
+3. 系统类加载器
+4. 用户自定义加载器
+   1. 继承`ClassLoader`类
+   2. 实现`loadClass() `方法
+   3. 实现`findClass()` 方法
+
+# 反射
+
+## 反射的作用
+
+反射的作用动态的使用java
+
+1. 动态创建对象
+2. 动态调佣方法
+
+
 
